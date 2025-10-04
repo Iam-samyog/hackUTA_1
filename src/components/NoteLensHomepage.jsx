@@ -4,6 +4,7 @@ import { faFileAlt, faPenNib, faMagic, faUsers } from "@fortawesome/free-solid-s
 import Footer from './Footer';
 import Navbar from './Navbar';
 import NYSkylineSection from './NYSkylineSection';
+import { Link } from 'react-router-dom';
 
 const NoteLensHomepage = () => {
 
@@ -289,7 +290,8 @@ const NoteLensHomepage = () => {
                                 Start Creating Notes
                             </button>
                             <button className="px-12 py-4 border-2 border-blue-600 text-blue-600 rounded-xl font-poppins font-semibold text-lg hover:bg-blue-50 transition-all hover:scale-105">
-                                Sign In
+                                <Link to="/login" >  Sign In</Link>
+                                
                             </button>
                         </div>
                     </div>
