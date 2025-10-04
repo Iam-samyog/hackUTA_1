@@ -9,7 +9,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-blue-400 text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2">
+      <nav className="bg-blue-500 text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -34,17 +34,17 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             <a
               href="#features"
-              className="text-gray-600 hover:text-blue-600 hover:border-b-3 transition-colors font-semibold"
+              className="text-gray-200 hover:text-white hover:border-b-3 transition-colors font-semibold"
             >
               Features
             </a>
             <a
               href="#how-it-works"
-              className="text-gray-600 hover:text-blue-600 transition-colors font-semibold hover:border-b-3"
+              className="text-gray-200 hover:text-white transition-colors font-semibold hover:border-b-3"
             >
               How it Works
             </a>
-            <button className="px-6 py-2 bg-blue-600 font-bold text-white rounded-lg hover:bg-blue-700 transition-all hover:scale-105 hover:border-b-3">
+            <button className="px-6 py-2 bg-blue-800 font-bold text-white rounded-lg hover:bg-white hover:text-black hover:border-black transition-all hover:scale-105 hover:border-b-3">
               Get Started
             </button>
           </div>
