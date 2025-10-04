@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faPenNib, faMagic, faUsers } from "@fortawesome/free-solid-svg-icons";
 import Footer from './Footer';
 import Navbar from './Navbar';
+import NYSkylineSection from './NYSkylineSection';
+
 const NoteLensHomepage = () => {
 
 
@@ -75,7 +77,7 @@ const NoteLensHomepage = () => {
           clearInterval(typingInterval);
           setTimeout(() => setShowCursor(false), 500);
         }
-      }, 80); // medium typing speed for both lines
+      }, 50); // medium typing speed for both lines
       cursorInterval = setInterval(() => {
         setShowCursor(prev => !prev);
       }, 450);
@@ -286,62 +288,31 @@ const NoteLensHomepage = () => {
                             <button className="px-8 py-4 bg-blue-600 text-white rounded-xl font-poppins font-semibold text-lg hover:bg-blue-700 transition-all hover:scale-105 hover:shadow-2xl">
                                 Start Creating Notes
                             </button>
-                            <button className="px-8 py-4 border-2 border-blue-600 text-blue-600 rounded-xl font-poppins font-semibold text-lg hover:bg-blue-50 transition-all hover:scale-105">
-                                Watch Demo
+                            <button className="px-12 py-4 border-2 border-blue-600 text-blue-600 rounded-xl font-poppins font-semibold text-lg hover:bg-blue-50 transition-all hover:scale-105">
+                                Sign In
                             </button>
                         </div>
                     </div>
 
                     {/* Hero Visual */}
-                    <div className={`mt-16 relative ${isVisible.hero ? 'animate-hero-visual' : 'opacity-0'}`}>
-                        <div className="max-w-4xl mx-auto">
-                            <div className="relative bg-gradient-to-br from-blue-50 to-white rounded-3xl shadow-2xl border border-blue-100 overflow-hidden p-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
-                                        <div className="flex items-center mb-4">
-                                            <div className="w-3 h-3 rounded-full bg-red-400 mr-2"></div>
-                                            <div className="w-3 h-3 rounded-full bg-yellow-400 mr-2"></div>
-                                            <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <div className="h-3 bg-blue-100 rounded w-3/4"></div>
-                                            <div className="h-3 bg-blue-100 rounded w-full"></div>
-                                            <div className="h-3 bg-blue-100 rounded w-5/6"></div>
-                                            <div className="h-3 bg-blue-50 rounded w-2/3"></div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-white rounded-xl p-6 shadow-lg border border-blue-100 transform rotate-2">
-                                        <div className="space-y-2">
-                                            <div className="h-4 bg-gradient-to-r from-blue-600 to-blue-400 rounded w-2/3"></div>
-                                            <div className="h-2 bg-blue-100 rounded w-full"></div>
-                                            <div className="h-2 bg-blue-100 rounded w-5/6"></div>
-                                            <div className="h-2 bg-blue-50 rounded w-3/4"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                   
                 </div>
 
                 {/* Decorative Elements */}
                 <div className="absolute top-8 left-4 sm:top-20 sm:left-15 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-                <div className="absolute bottom-8 right-4 sm:bottom-20 sm:right-10 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute top-8 right-4 sm:bottom-20 sm:right-10 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
 
-                {/* Aeroplane Animations */}
-                <div className="absolute top-20 right-4 sm:right-16 z-40 animate-aeroplane-right">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{transform: 'rotate(2780deg)'}} xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 12L22 2L13 22L11 13L2 12Z" fill="#2563eb" stroke="#1e3a8a" strokeWidth="1.5"/>
-                  </svg>
-                </div>
-               
+       
+               <div className='mt-8'>
+               <NYSkylineSection/>
+               </div>
            
             </section>
 
            <section
   id="features"
   ref={featuresRef}
-  className="py-24 px-6 bg-gradient-to-b from-white to-blue-50"
+  className="py-18  relative px-6 bg-gradient-to-b from-white to-blue-50"
 >
   <div className="max-w-7xl mx-auto">
     <div className="text-center mb-16">
@@ -356,7 +327,7 @@ const NoteLensHomepage = () => {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* Feature 1 */}
       <div
-        className={`bg-white rounded-2xl p-8 shadow-lg border border-blue-100 cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl ${
+        className={`bg-white rounded-2xl p-8 shadow-lg border border-blue-100 cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:border-blue-500 hover:glow-border ${
           isVisible.features ? 'animate-feature' : 'opacity-0'
         }`}
       >
@@ -387,7 +358,7 @@ const NoteLensHomepage = () => {
 
       {/* Feature 2 */}
       <div
-        className={`bg-white rounded-2xl p-8 shadow-lg border border-blue-100 cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl ${
+        className={`bg-white rounded-2xl p-8 shadow-lg border border-blue-100 cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:border-blue-500 hover:glow-border ${
           isVisible.features ? 'animate-feature delay-200' : 'opacity-0'
         }`}
       >
@@ -418,10 +389,16 @@ const NoteLensHomepage = () => {
 
       {/* Feature 3 */}
       <div
-        className={`bg-white rounded-2xl p-8 shadow-lg border border-blue-100 cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl ${
+        className={`bg-white rounded-2xl p-8 shadow-lg border border-blue-100 cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:border-blue-500 hover:glow-border ${
           isVisible.features ? 'animate-feature delay-400' : 'opacity-0'
         }`}
       >
+            <style>{`
+              .glow-border {
+                box-shadow: 0 0 16px 4px #3b82f6, 0 0 32px 8px #2563eb33;
+                transition: box-shadow 0.3s;
+              }
+            `}</style>
         <div
           className={`w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500`}
         >
@@ -448,6 +425,7 @@ const NoteLensHomepage = () => {
       </div>
     </div>
   </div>
+   
 </section>
 
             {/* How It Works Section */}
@@ -464,6 +442,9 @@ const NoteLensHomepage = () => {
           </div>
 
           <div className="relative">
+            <div className="absolute bottom-8 left-4 sm:top-20 sm:left-15 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+    <div className="absolute top-8 right-4 sm:bottom-20 sm:right-10 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+
             {/* Flowchart Container */}
             <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-4">
               
@@ -567,20 +548,17 @@ const NoteLensHomepage = () => {
                 </div>
 
                 <div className={`max-w-4xl mx-auto text-center relative z-10 ${isVisible.cta ? 'animate-cta' : 'opacity-0'}`}>
-                    <h2 className="text-4xl md:text-6xl font-poppins font-bold text-white mb-6">
-                        Ready to Revolutionize Your Note-Taking?
-                    </h2>
-                    <p className="text-xl text-blue-100 mb-10 leading-relaxed">
-                        Join thousands of students and researchers who are already experiencing the future of notes.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button className="px-10 py-5 bg-white text-blue-600 rounded-xl font-poppins font-semibold text-lg hover:bg-blue-50 transition-all hover:scale-105 hover:shadow-2xl">
-                            Get Started Free
-                        </button>
-                        <button className="px-10 py-5 border-2 border-white text-white rounded-xl font-poppins font-semibold text-lg hover:bg-white/10 transition-all hover:scale-105">
-                            Schedule a Demo
-                        </button>
-                    </div>
+          <h2 className="text-4xl md:text-6xl font-poppins font-bold text-white mb-6">
+            Ready to Revolutionize Your Note-Taking?
+          </h2>
+          <p className="text-xl text-blue-100 mb-10 leading-relaxed">
+            Join thousands of students and researchers who are already experiencing the future of notes.
+          </p>
+          <div className="flex justify-center">
+            <button className="px-10 py-5 bg-white text-blue-600 rounded-xl font-poppins font-semibold text-lg hover:bg-blue-50 transition-all hover:scale-105 hover:shadow-2xl">
+              Get Started Free
+            </button>
+          </div>
                 </div>
             </section>
 
