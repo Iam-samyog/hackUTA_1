@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileAlt } from "@fortawesome/free-solid-svg-icons";
+import { faFileAlt, faPenNib, faMagic, faUsers } from "@fortawesome/free-solid-svg-icons";
 
 const NoteLensHomepage = () => {
 
@@ -49,20 +49,43 @@ const NoteLensHomepage = () => {
         };
     }, []);
 
-  // Typed effect state for hero headline
-  const [typedText, setTypedText] = useState("");
-  const fullText = "Handwritten Brilliance";
+  // Typed effect state for hero headline (robust cursor and flow)
+  const [typedMain, setTypedMain] = useState("");
+  const [typedSub, setTypedSub] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  const mainText = "Transform Your Notes Into";
+  const subText = "Handwritten Brilliance";
   useEffect(() => {
+    let typingInterval, cursorInterval;
     if (isVisible.hero) {
       let i = 0;
-      const interval = setInterval(() => {
-        setTypedText(fullText.slice(0, i + 1));
-        i++;
-        if (i === fullText.length) clearInterval(interval);
-      }, 70);
-      return () => clearInterval(interval);
+      let j = 0;
+      setTypedMain("");
+      setTypedSub("");
+      setShowCursor(true);
+      typingInterval = setInterval(() => {
+        if (i < mainText.length) {
+          setTypedMain(mainText.slice(0, i + 1));
+          i++;
+        } else if (j < subText.length) {
+          setTypedSub(subText.slice(0, j + 1));
+          j++;
+        } else {
+          clearInterval(typingInterval);
+          setTimeout(() => setShowCursor(false), 500);
+        }
+      }, 80); // medium typing speed for both lines
+      cursorInterval = setInterval(() => {
+        setShowCursor(prev => !prev);
+      }, 450);
+      return () => {
+        clearInterval(typingInterval);
+        clearInterval(cursorInterval);
+      };
     } else {
-      setTypedText("");
+      setTypedMain("");
+      setTypedSub("");
+      setShowCursor(true);
     }
   }, [isVisible.hero]);
   return (
@@ -191,6 +214,29 @@ const NoteLensHomepage = () => {
         .delay-400 { animation-delay: 0.4s; }
         .delay-500 { animation-delay: 0.5s; }
         .delay-600 { animation-delay: 0.6s; }
+
+        @keyframes aeroplaneRight {
+          0% { transform: translateX(0) rotate(-35deg); }
+          50% { transform: translateX(-120px) rotate(-35deg); }
+          100% { transform: translateX(0) rotate(-35deg); }
+        }
+        .animate-aeroplane-right {
+          animation: aeroplaneRight 7s ease-in-out infinite;
+        }
+        @keyframes aeroplaneLeft {
+          0% { transform: translateX(0) rotate(-12deg); }
+          50% { transform: translateX(120px) rotate(-12deg); }
+          100% { transform: translateX(0) rotate(-12deg); }
+        }
+        .animate-aeroplane-left {
+          animation: aeroplaneLeft 7s ease-in-out infinite;
+        }
+        .animate-aeroplane-right {
+          animation: aeroplaneRight 3s ease-in-out infinite;
+        }
+        .animate-aeroplane-left {
+          animation: aeroplaneLeft 3s ease-in-out infinite;
+        }
       `}</style>
 
             {/* Navigation */}
@@ -216,13 +262,38 @@ const NoteLensHomepage = () => {
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 px-6 overflow-hidden mt-5 md:mt-10">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-7xl mx-auto relative">
                     <div className="text-center max-w-4xl mx-auto">
                         <h1 className={`text-5xl md:text-7xl font-poppins font-bold text-blue-900 leading-[1] mb-6 ${isVisible.hero ? 'animate-hero-title' : 'opacity-0'}`}>
-              Transform Your Notes Into
-              <span className="block text-transparent font-bold bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700">
-                {typedText}
-                <span className="inline-block w-2 h-8 align-middle bg-blue-700 animate-pulse ml-1" style={{opacity: typedText.length < fullText.length ? 1 : 0}}></span>
+                            <span className="block font-extrabold text-blue-900 relative text-5xl md:text-7xl leading-[0.9]">
+                {typedMain}
+                {typedMain.length < mainText.length && showCursor && (
+                  <span
+                    className="inline-block align-baseline bg-blue-700 ml-1"
+                    style={{
+                      width: '2px',
+                      height: '1em',
+                      verticalAlign: 'baseline',
+                      borderRadius: '1px',
+                      display: 'inline-block'
+                    }}
+                  ></span>
+                )}
+              </span>
+              <span className="block text-transparent font-bold bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700 relative">
+                {typedSub}
+                {typedMain.length === mainText.length && typedSub.length < subText.length && showCursor && (
+                  <span
+                    className="inline-block align-baseline bg-blue-700 ml-1"
+                    style={{
+                      width: '2px',
+                      height: '1em',
+                      verticalAlign: 'baseline',
+                      borderRadius: '1px',
+                      display: 'inline-block'
+                    }}
+                  ></span>
+                )}
               </span>
                         </h1>
                         <p className={`text-lg md:text-xl text-gray-600 mb-10 leading-tight ${isVisible.hero ? 'animate-hero-subtitle' : 'opacity-0'}`}>
@@ -272,8 +343,16 @@ const NoteLensHomepage = () => {
                 </div>
 
                 {/* Decorative Elements */}
-                <div className="absolute top-20 left-15 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-                <div className="absolute bottom-20 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute top-8 left-4 sm:top-20 sm:left-15 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+                <div className="absolute bottom-8 right-4 sm:bottom-20 sm:right-10 w-32 h-32 sm:w-72 sm:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+
+                {/* Aeroplane Animations */}
+                <div className="absolute top-20 right-4 sm:right-16 z-40 animate-aeroplane-right">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{transform: 'rotate(2780deg)'}} xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 12L22 2L13 22L11 13L2 12Z" fill="#2563eb" stroke="#1e3a8a" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+               
            
             </section>
 
@@ -390,80 +469,113 @@ const NoteLensHomepage = () => {
 </section>
 
             {/* How It Works Section */}
-            <section id="how-it-works" ref={stepsRef} className="py-24 px-6 bg-white">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl md:text-5xl font-poppins font-bold text-blue-900 mb-4">
-                            Three Simple Steps to Better Notes
-                        </h2>
-                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            From capture to collaboration in seconds. NoteLens streamlines your workflow so you can focus on what matters.
-                        </p>
+            {/* How It Works Section - Flowchart Style */}
+      <section id="how-it-works" ref={stepsRef} className="py-24 px-6 bg-gradient-to-b from-white to-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-poppins font-bold text-blue-900 mb-4">
+              Three Simple Steps to Better Notes
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              From capture to collaboration in seconds. NoteLens streamlines your workflow so you can focus on what matters.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Flowchart Container */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-4">
+              
+              {/* Step 1 */}
+              <div className={`flex flex-col items-center ${isVisible.steps ? 'animate-feature' : 'opacity-0'}`}>
+                <div className="relative">
+                  <div className="w-64 h-80 bg-white rounded-2xl shadow-2xl border-4 border-blue-500 p-6 flex flex-col items-center justify-center transform hover:scale-105 transition-all duration-300">
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-poppins font-bold text-xl shadow-lg">
+                      1
                     </div>
-
-                    <div className="space-y-12">
-                        {/* Step 1 */}
-                        <div className={`flex flex-col md:flex-row items-center gap-8 ${isVisible.steps ? 'animate-step-left' : 'opacity-0'}`}>
-                            <div className="flex-1 md:text-right">
-                                <div className="inline-block w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-poppins font-bold text-2xl mb-4">
-                                    1
-                                </div>
-                                <h3 className="text-3xl font-poppins font-semibold text-blue-900 mb-4">Input Your Notes</h3>
-                                <p className="text-gray-600 leading-relaxed text-lg">
-                                    Type or paste your lecture notes, research findings, or meeting minutes directly into NoteLens. Our intuitive editor makes capturing information effortless.
-                                </p>
-                            </div>
-                            <div className="flex-shrink-0">
-                                <div className="w-64 h-64 bg-gradient-to-br from-blue-100 to-blue-50 rounded-3xl shadow-xl flex items-center justify-center border border-blue-200">
-                                    <svg className="w-32 h-32 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Step 2 */}
-                        <div className={`flex flex-col md:flex-row-reverse items-center gap-8 ${isVisible.steps ? 'animate-step-right delay-200' : 'opacity-0'}`}>
-                            <div className="flex-1 md:text-left">
-                                <div className="inline-block w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-poppins font-bold text-2xl mb-4">
-                                    2
-                                </div>
-                                <h3 className="text-3xl font-poppins font-semibold text-blue-900 mb-4">AI Transforms</h3>
-                                <p className="text-gray-600 leading-relaxed text-lg">
-                                    Watch as our AI instantly converts your notes into beautiful handwritten format and generates concise summaries that highlight key points.
-                                </p>
-                            </div>
-                            <div className="flex-shrink-0">
-                                <div className="w-64 h-64 bg-gradient-to-br from-blue-100 to-blue-50 rounded-3xl shadow-xl flex items-center justify-center border border-blue-200">
-                                    <svg className="w-32 h-32 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Step 3 */}
-                        <div className={`flex flex-col md:flex-row items-center gap-8 ${isVisible.steps ? 'animate-step-left delay-400' : 'opacity-0'}`}>
-                            <div className="flex-1 md:text-right">
-                                <div className="inline-block w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-poppins font-bold text-2xl mb-4">
-                                    3
-                                </div>
-                                <h3 className="text-3xl font-poppins font-semibold text-blue-900 mb-4">Share & Collaborate</h3>
-                                <p className="text-gray-600 leading-relaxed text-lg">
-                                    Share your processed notes with classmates, research partners, or study groups with a single click. Keep everyone aligned and informed.
-                                </p>
-                            </div>
-                            <div className="flex-shrink-0">
-                                <div className="w-64 h-64 bg-gradient-to-br from-blue-100 to-blue-50 rounded-3xl shadow-xl flex items-center justify-center border border-blue-200">
-                                    <svg className="w-32 h-32 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center mb-6 border-2 border-blue-200">
+                      <svg className="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
                     </div>
+                    <h3 className="text-2xl font-poppins font-bold text-blue-900 mb-3 text-center">Input Your Notes</h3>
+                    <p className="text-sm text-gray-600 text-center leading-relaxed">
+                      Type or paste your notes directly into our intuitive editor
+                    </p>
+                  </div>
                 </div>
-            </section>
+              </div>
+
+              {/* Arrow 1 */}
+              <div className={`hidden md:flex items-center ${isVisible.steps ? 'animate-feature delay-200' : 'opacity-0'}`}>
+                <svg className="w-16 h-16 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M13.025 1l-2.847 2.828 6.176 6.176h-16.354v3.992h16.354l-6.176 6.176 2.847 2.828 10.975-11z"/>
+                </svg>
+              </div>
+
+              {/* Arrow vertical for mobile */}
+              <div className={`md:hidden flex justify-center ${isVisible.steps ? 'animate-feature delay-200' : 'opacity-0'}`}>
+                <svg className="w-16 h-16 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M1 13.025l2.828 2.847 6.176-6.176v16.354h3.992v-16.354l6.176 6.176 2.828-2.847-11-10.975z" transform="rotate(180 12 12)"/>
+                </svg>
+              </div>
+
+              {/* Step 2 */}
+              <div className={`flex flex-col items-center ${isVisible.steps ? 'animate-feature delay-300' : 'opacity-0'}`}>
+                <div className="relative">
+                  <div className="w-64 h-80 bg-white rounded-2xl shadow-2xl border-4 border-blue-500 p-6 flex flex-col items-center justify-center transform hover:scale-105 transition-all duration-300">
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-poppins font-bold text-xl shadow-lg">
+                      2
+                    </div>
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center mb-6 border-2 border-blue-200">
+                      <svg className="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-poppins font-bold text-blue-900 mb-3 text-center">AI Transforms</h3>
+                    <p className="text-sm text-gray-600 text-center leading-relaxed">
+                      Watch AI convert notes into handwritten format with summaries
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow 2 */}
+              <div className={`hidden md:flex items-center ${isVisible.steps ? 'animate-feature delay-400' : 'opacity-0'}`}>
+                <svg className="w-16 h-16 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M13.025 1l-2.847 2.828 6.176 6.176h-16.354v3.992h16.354l-6.176 6.176 2.847 2.828 10.975-11z"/>
+                </svg>
+              </div>
+
+              {/* Arrow vertical for mobile */}
+              <div className={`md:hidden flex justify-center ${isVisible.steps ? 'animate-feature delay-400' : 'opacity-0'}`}>
+                <svg className="w-16 h-16 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M1 13.025l2.828 2.847 6.176-6.176v16.354h3.992v-16.354l6.176 6.176 2.828-2.847-11-10.975z" transform="rotate(180 12 12)"/>
+                </svg>
+              </div>
+
+              {/* Step 3 */}
+              <div className={`flex flex-col items-center ${isVisible.steps ? 'animate-feature delay-500' : 'opacity-0'}`}>
+                <div className="relative">
+                  <div className="w-64 h-80 bg-white rounded-2xl shadow-2xl border-4 border-blue-500 p-6 flex flex-col items-center justify-center transform hover:scale-105 transition-all duration-300">
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-poppins font-bold text-xl shadow-lg">
+                      3
+                    </div>
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center mb-6 border-2 border-blue-200">
+                      <svg className="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-poppins font-bold text-blue-900 mb-3 text-center">Share & Collaborate</h3>
+                    <p className="text-sm text-gray-600 text-center leading-relaxed">
+                      Share with one click and keep everyone aligned
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
             {/* CTA Section */}
             <section ref={ctaRef} className="py-24 px-6 bg-gradient-to-br from-blue-600 to-blue-700 relative overflow-hidden">
