@@ -17,7 +17,6 @@ import CORSDebugger from "./CORSDebugger.jsx";
 import Pagination from "./Pagination.jsx";
 import { TagList, TagInput } from "./TagComponents.jsx";
 import MarkdownViewer from "./MarkdownViewer.jsx";
-import AuthDebugger from "./AuthDebugger.jsx";
 import {
   OCRStatusBadge,
   OCRProgressIndicator,
@@ -114,15 +113,6 @@ const Dashboard = () => {
         setTotalPages(notesData.pages || 0);
         setHasNext(notesData.has_next || false);
         setHasPrev(notesData.has_prev || false);
-      }
-
-      // Debug: Check what fields are available in the notes
-      if (notesData.items && notesData.items.length > 0) {
-        console.log("Sample note data:", notesData.items[0]);
-        console.log("Available note fields:", Object.keys(notesData.items[0]));
-      } else if (Array.isArray(notesData) && notesData.length > 0) {
-        console.log("Sample note data:", notesData[0]);
-        console.log("Available note fields:", Object.keys(notesData[0]));
       }
     } catch (error) {
       setError("Failed to fetch notes");
@@ -268,29 +258,15 @@ const Dashboard = () => {
   // Markdown download handler
   const handleMarkdownDownload = async (noteId, filename) => {
     try {
-      // Note: We should also check if the note has markdown, but we'll let the backend handle the error
       await triggerFileDownload(noteId, "markdown");
     } catch (error) {
       console.error("Markdown download failed:", error);
-      if (error.message?.includes("404")) {
-        alert(
-          "Markdown content is not available for this note yet. The AI processing may still be in progress."
-        );
-      } else {
-        alert("Markdown download failed. Please try again.");
-      }
+      alert("Markdown download failed. Please try again.");
     }
   };
 
   // Open markdown viewer
   const handleViewMarkdown = (note) => {
-    // For now, always allow trying to view markdown - let the MarkdownViewer handle errors
-    // if (!note.has_markdown) {
-    //   alert(
-    //     "AI-generated markdown content is not available for this note yet. The AI processing may still be in progress. Please try again later."
-    //   );
-    //   return;
-    // }
     setCurrentMarkdownNote(note);
     setShowMarkdownViewer(true);
   };
@@ -519,7 +495,8 @@ const Dashboard = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
+          // This is important
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-8">
             {notes.map((note) => (
               <div
                 key={note.public_id}
@@ -543,28 +520,25 @@ const Dashboard = () => {
                       <h3 className="text-xl font-poppins font-bold text-black drop-shadow-lg mb-1 text-center line-clamp-2">
                         {note.title}
                       </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold mt-1 ${note.is_public ? 'bg-blue-800 text-blue-200' : 'bg-gray-700 text-gray-300'}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold mt-1 ${note.is_public ? 'bg-blue-600 text-blue-200' : 'bg-gray-700 text-gray-300'}`}>
                         {note.is_public ? 'Public' : 'Private'}
                       </span>
                     </div>
                   </div>
-                  <div className="px-6 py-5 flex flex-col gap-3 bg-[#6E8FE2]">
+                  <div className="px-6 py-5 flex flex-col gap-3 bg-blue-500">
                     <p className="text-blue-200 mb-2 line-clamp-2 text-sm text-center font-inter">
                       {note.description}
                     </p>
                     <div className="flex items-center justify-center gap-4 text-xs text-white mb-2">
                       <button
-                        onClick={() =>
-                          handleUsernameClick(note.owner?.username)
-                        }
+                        onClick={() => handleUsernameClick(note.owner?.username)}
                         className="flex items-center gap-1 hover:underline"
                         title={`View ${note.owner?.username}'s profile`}
                       >
                         <i className="fas fa-user"></i> {note.owner?.username}
                       </button>
                       <span className="flex items-center gap-1">
-                        <i className="far fa-calendar-alt"></i>{" "}
-                        {new Date(note.created_at).toLocaleDateString()}
+                        <i className="far fa-calendar-alt"></i> {new Date(note.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-center gap-2 mb-2">
@@ -586,24 +560,22 @@ const Dashboard = () => {
                       </button>
                       <button
                         onClick={() => handleViewMarkdown(note)}
-                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-white text-black hover:text-white rounded-lg hover:bg-blue-500 hover:border-b transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                         title="View AI-generated markdown"
                       >
-                        <i className="fas fa-file-markdown mr-1"></i>
-                        Markdown
+                        <i className="fas fa-file-markdown mr-1"></i> Markdown
                       </button>
                       <button
                         onClick={() => handleFileDownload(note.public_id, `${note.title}.pdf`)}
-                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-white text-black hover:text-white rounded-lg hover:bg-blue-500 hover:border-b transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                       >
                         <i className="fas fa-download mr-1"></i> PDF
                       </button>
                       <button
                         onClick={() => handleMarkdownDownload(note.public_id, `${note.title}.md`)}
-                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs col-span-2"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-white text-black rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs col-span-2"
                       >
-                        <i className="fas fa-download mr-1"></i>
-                        Download Markdown
+                        <i className="fas fa-download mr-1"></i> Download Markdown
                       </button>
                     </div>
                   </div>
@@ -765,7 +737,7 @@ const Dashboard = () => {
               </button>
             </div>
             <div className="p-4">
-              <AuthDebugger />
+              <CORSDebugger />
             </div>
           </div>
         </div>
@@ -774,8 +746,7 @@ const Dashboard = () => {
       {/* Markdown Viewer Modal */}
       {showMarkdownViewer && currentMarkdownNote && (
         <MarkdownViewer
-          notePublicId={currentMarkdownNote.public_id}
-          isOpen={showMarkdownViewer}
+          note={currentMarkdownNote}
           onClose={() => setShowMarkdownViewer(false)}
         />
       )}
