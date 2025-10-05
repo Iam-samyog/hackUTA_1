@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import NavbarNew from "./NavbarNew.jsx";
 import {
   getPublicNotes,
   createNote,
@@ -281,7 +282,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 pt-20 mt-5">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
@@ -308,87 +309,32 @@ const Dashboard = () => {
         .animate-slide-in {
           animation: slideIn 0.3s ease-out;
         }
+
+        @keyframes glow {
+          0% {
+            box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+          }
+          100% {
+            box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+          }
+        }
+
+        .card-glow:hover {
+          animation: glow 1.5s ease-in-out infinite;
+        }
       `}</style>
 
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2 bg-white/70">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </div>
-            <Link
-              to="/"
-              className="text-xl font-poppins font-bold text-blue-900"
-            >
-              NoteLens
-            </Link>
-          </div>
-
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/profile"
-              className="text-black hover:text-blue-600 font-poppins font-semibold transition-colors"
-            >
-              Profile
-            </Link>
-            <Link
-              to="/courses"
-              className="text-black hover:text-blue-600 font-poppins font-semibold transition-colors"
-            >
-              Courses
-            </Link>
-            <Link
-              to="/search"
-              className="text-black hover:text-blue-600 font-poppins font-semibold transition-colors"
-            >
-              Search
-            </Link>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold"
-            >
-              Create Note
-            </button>
-            <button
-              onClick={() => setShowDebugger(!showDebugger)}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-poppins font-semibold"
-            >
-              Debug API
-            </button>
-            <span className="text-gray-600 text-sm">
-              Welcome, {user?.username || "User"}!
-            </span>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-poppins font-semibold"
-            >
-              Logout
-            </button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button onClick={toggleMenu}>
-              <FontAwesomeIcon icon={faBars} size="lg" className="text-black" />
-            </button>
-          </div>
-        </div>
-      </nav>
+      <NavbarNew
+        user={user}
+        logout={logout}
+        setShowCreateModal={setShowCreateModal}
+        showDebugger={showDebugger}
+        setShowDebugger={setShowDebugger}
+      />
 
       {/* Mobile Sidebar */}
       <div
@@ -542,122 +488,98 @@ const Dashboard = () => {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold"
+              className="bg-blue-700 text-white w-[600px] h-[300px] rounded-full shadow-2xl hover:bg-blue-800 transition-all font-poppins font-extrabold text-6xl tracking-widest border-4 border-blue-900 flex items-center justify-center mx-auto"
             >
+              <i className="fas fa-plus mr-12 text-6xl"></i>
               Create Your First Note
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
             {notes.map((note) => (
               <div
                 key={note.public_id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg border border-gray-200 transform transition hover:scale-105"
+                className="bg-gradient-to-br from-blue-900 to-blue-800 shadow-2xl border border-blue-950 transform transition hover:scale-[1.02] card-glow relative overflow-hidden rounded-xl w-[340px] h-auto mx-auto"
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-poppins font-semibold text-gray-900 line-clamp-2">
-                      {note.title}
-                    </h3>
-                    {user?.username === note.owner?.username && (
+                <div className="p-0">
+                  <div className="relative h-32 w-full flex items-center justify-center bg-blue-950">
+                    <div className="absolute top-3 right-3 z-20">
+                      {user?.username === note.owner?.username && (
+                        <button
+                          onClick={() => handleDeleteNote(note.public_id)}
+                          className="text-blue-300 hover:text-white transition-colors bg-blue-900/50 rounded-full p-2 shadow-md backdrop-blur-sm"
+                          title="Delete note"
+                          aria-label="Delete note"
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center justify-center w-full px-6">
+                      <h3 className="text-xl font-poppins font-bold text-white drop-shadow-lg mb-1 text-center line-clamp-2">
+                        {note.title}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold mt-1 ${note.is_public ? 'bg-blue-800 text-blue-200' : 'bg-gray-700 text-gray-300'}`}>
+                        {note.is_public ? 'Public' : 'Private'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="px-6 py-5 flex flex-col gap-3 bg-blue-900/90">
+                    <p className="text-blue-200 mb-2 line-clamp-2 text-sm text-center font-inter">
+                      {note.description}
+                    </p>
+                    <div className="flex items-center justify-center gap-4 text-xs text-blue-300 mb-2">
                       <button
-                        onClick={() => handleDeleteNote(note.public_id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        title="Delete note"
-                        aria-label="Delete note"
+                        onClick={() => handleUsernameClick(note.owner?.username)}
+                        className="flex items-center gap-1 hover:underline"
+                        title={`View ${note.owner?.username}'s profile`}
                       >
-                        <i className="fas fa-trash-alt"></i>
+                        <i className="fas fa-user"></i> {note.owner?.username}
                       </button>
-                    )}
-                  </div>
-
-                  <p className="text-gray-600 mb-4 line-clamp-3 text-base">
-                    {note.description}
-                  </p>
-
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <button
-                      onClick={() => handleUsernameClick(note.owner?.username)}
-                      className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors cursor-pointer bg-transparent border-none p-0"
-                      title={`View ${note.owner?.username}'s profile`}
-                    >
-                      By {note.owner?.username}
-                    </button>
-                    <span>
-                      {new Date(note.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {/* OCR Status Display */}
-                  <div className="mt-3">
-                    <OCRStatusBadge noteId={note.public_id} />
-                  </div>
-
-                  <div className="mt-4 flex justify-between items-center">
-                    <Link
-                      to={`/note/${note.public_id}`}
-                      className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors font-poppins font-semibold"
-                    >
-                      View Details
-                      <i className="fas fa-arrow-right ml-1"></i>
-                    </Link>
-
-                    <div className="flex space-x-2">
+                      <span className="flex items-center gap-1">
+                        <i className="far fa-calendar-alt"></i> {new Date(note.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <OCRStatusBadge noteId={note.public_id} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <Link
+                        to={`/note/${note.public_id}`}
+                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
+                      >
+                        <i className="fas fa-eye mr-1"></i> Details
+                      </Link>
                       <button
                         onClick={() => handleViewFile(note)}
-                        className="inline-flex items-center text-green-600 hover:text-green-700 transition-colors font-poppins font-semibold"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                         aria-label="View file"
                       >
-                        <i className="fas fa-eye mr-1"></i>
-                        View File
+                        <i className="fas fa-file-pdf mr-1"></i> View PDF
                       </button>
-
-                      {/* Markdown View Button */}
                       <button
                         onClick={() => handleViewMarkdown(note)}
-                        className="inline-flex items-center text-purple-600 hover:text-purple-700 transition-colors font-poppins font-semibold"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                         title="View AI-generated markdown"
                       >
-                        <i className="fas fa-file-markdown mr-1"></i>
-                        Markdown
+                        <i className="fas fa-file-markdown mr-1"></i> Markdown
                       </button>
-
-                      {/* Download Options */}
-                      <div className="relative group">
-                        <button className="inline-flex items-center text-gray-600 hover:text-gray-700 transition-colors font-poppins font-semibold">
-                          <i className="fas fa-download mr-1"></i>
-                          Download
-                        </button>
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block z-10">
-                          <button
-                            onClick={() =>
-                              handleFileDownload(
-                                note.public_id,
-                                `${note.title}.pdf`
-                              )
-                            }
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <i className="fas fa-file-pdf mr-2"></i>
-                            Original File
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleMarkdownDownload(
-                                note.public_id,
-                                `${note.title}.md`
-                              )
-                            }
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <i className="fas fa-file-markdown mr-2"></i>
-                            Markdown
-                          </button>
-                        </div>
-                      </div>
+                      <button
+                        onClick={() => handleFileDownload(note.public_id, `${note.title}.pdf`)}
+                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
+                      >
+                        <i className="fas fa-download mr-1"></i> PDF
+                      </button>
+                      <button
+                        onClick={() => handleMarkdownDownload(note.public_id, `${note.title}.md`)}
+                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs col-span-2"
+                      >
+                        <i className="fas fa-download mr-1"></i> Download Markdown
+                      </button>
                     </div>
                   </div>
                 </div>
+                <div className="absolute left-0 bottom-0 w-full h-2 bg-blue-950 rounded-b-xl"></div>
               </div>
             ))}
           </div>
@@ -827,6 +749,18 @@ const Dashboard = () => {
           onClose={() => setShowMarkdownViewer(false)}
         />
       )}
+
+      {/* Floating Create Note Button */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 z-40 group"
+        aria-label="Create new note"
+      >
+        <i className="fas fa-plus text-2xl"></i>
+        <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-blue-900 text-white px-3 py-2 rounded-lg text-sm font-poppins font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          Create Note
+        </span>
+      </button>
     </div>
   );
 };

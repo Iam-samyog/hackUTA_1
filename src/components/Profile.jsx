@@ -36,14 +36,20 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showSizeAlert, setShowSizeAlert] = useState(false);
+
+  // States and refs for webcam functionality
   const [showWebcamModal, setShowWebcamModal] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
+  const cameraInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const cameraInputRef = useRef(null);
 
-  // Device detection
-  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  // Simple check for mobile devices
+  const isMobile =
+    typeof window !== "undefined" &&
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -60,29 +66,25 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
     e.stopPropagation();
     setDragActive(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type === "application/pdf") {
+    if (file) {
       if (file.size > maxSize * 1024 * 1024) {
         setShowSizeAlert(true);
       } else {
         setSelectedFile(file);
         onFileSelect(file);
       }
-    } else {
-      alert(`Please drop a PDF file under ${maxSize}MB.`);
     }
   };
 
   const handleChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type === "application/pdf") {
+    if (file) {
       if (file.size > maxSize * 1024 * 1024) {
         setShowSizeAlert(true);
       } else {
         setSelectedFile(file);
         onFileSelect(file);
       }
-    } else {
-      alert(`Please select a PDF file under ${maxSize}MB.`);
     }
   };
 
@@ -101,7 +103,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
           }
         })
         .catch(() => {
-          alert("Unable to access webcam.");
+          alert("Unable to access webcam. Please check permissions.");
         });
     }
   };
@@ -116,7 +118,9 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], "webcam.jpg", { type: "image/jpeg" });
+          const file = new File([blob], "webcam-capture.jpg", {
+            type: "image/jpeg",
+          });
           setSelectedFile(file);
           onFileSelect(file);
           setShowWebcamModal(false);
@@ -146,7 +150,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
         setSelectedFile(file);
         onFileSelect(file);
       }
-    } else {
+    } else if (file) {
       alert("Please capture an image.");
     }
   };
@@ -167,11 +171,11 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <p className="text-gray-600 mb-2">Drag and drop a PDF file here, or</p>
+        <p className="text-gray-600 mb-2">Drag and drop a file here, or</p>
         <div className="flex gap-4 justify-center">
           <label className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700 flex items-center gap-2">
             <FontAwesomeIcon icon={faFilePdf} />
-            Add PDF
+            Add File
             <input
               type="file"
               accept={accept}
@@ -190,7 +194,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
           <input
             type="file"
             accept="image/*"
-            capture="environment"
+            capture="environment" // Prioritize back camera on mobile
             className="hidden"
             ref={cameraInputRef}
             onChange={handleCameraCapture}
@@ -218,7 +222,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
                 File Size Exceeded
               </h3>
               <p className="text-gray-600 mb-6">
-                Please select a file smaller than 10MB.
+                Please select a file smaller than {maxSize}MB.
               </p>
               <div className="flex justify-end">
                 <button
@@ -240,7 +244,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-80 h-60 bg-black rounded"
+              className="w-full max-w-lg h-auto bg-black rounded"
             />
             <canvas ref={canvasRef} style={{ display: "none" }} />
             <div className="mt-4 flex gap-4">
@@ -763,7 +767,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white mt-10">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
@@ -1189,7 +1193,7 @@ const Profile = () => {
                     </label>
                     <FileUpload
                       onFileSelect={handleFileSelect}
-                      accept=".pdf"
+                      accept=".pdf,image/*"
                       maxSize={10}
                     />
                   </div>
