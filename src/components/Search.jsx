@@ -1,33 +1,178 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getPublicNotes } from "../services/notesService.js";
-import { Link, useNavigate } from "react-router-dom";
+import { searchNotes } from "../services/searchService.js";
+import { getPopularTags } from "../services/tagsService.js";
+import { toggleBookmark } from "../services/bookmarksService.js";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import Pagination from "./Pagination.jsx";
+import { TagList, TagInput } from "./TagComponents.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faTimes, faPlus,faSearch, faSort,faSignOutAlt, faFilter, faTimesCircle, faArrowRight, faFileAlt } from "@fortawesome/free-solid-svg-icons";
+import { 
+  faBars, faTimes, faSearch, faFilter, faTimesCircle, 
+  faHeart, faEye, faDownload, faSignOutAlt 
+} from "@fortawesome/free-solid-svg-icons";
 
 const Search = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [allNotes, setAllNotes] = useState([]);
-  const [filteredNotes, setFilteredNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Search results and pagination
+  const [searchResults, setSearchResults] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalResults, setTotalResults] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
+
+  // UI state
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchBoxVisible, setIsSearchBoxVisible] = useState(false); // New state for animation
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Search and filter states
+  // Search form state
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-  const [filterBy, setFilterBy] = useState("all");
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [courseFilter, setCourseFilter] = useState("");
+  const [ownerFilter, setOwnerFilter] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState("");
+
+  // Data
+  const [popularTags, setPopularTags] = useState([]);
+  const [bookmarkedNotes, setBookmarkedNotes] = useState(new Set());
 
   useEffect(() => {
-    fetchNotes();
-  }, []);
+    fetchPopularTags();
+    // Initialize search from URL params
+    const initialQuery = searchParams.get('q') || '';
+    const initialTags = searchParams.get('tags') || '';
+    
+    if (initialQuery) setSearchQuery(initialQuery);
+    if (initialTags) {
+      setSelectedTags(initialTags.split(',').map(tag => ({ name: tag })));
+    }
+    
+    // Perform initial search if there are params
+    if (initialQuery || initialTags) {
+      performSearch({
+        q: initialQuery,
+        tags: initialTags
+      });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
-    filterAndSortNotes();
-  }, [allNotes, searchQuery, sortBy, filterBy]);
+    if (searchQuery || selectedTags.length > 0 || courseFilter || ownerFilter || visibilityFilter) {
+      performSearch();
+    }
+  }, [currentPage, perPage]);
+
+  const fetchPopularTags = async () => {
+    try {
+      const tags = await getPopularTags(20);
+      setPopularTags(tags);
+    } catch (error) {
+      console.error("Error fetching popular tags:", error);
+    }
+  };
+
+  const performSearch = async (customParams = {}) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const searchParams = {
+        page: currentPage,
+        per_page: perPage,
+        ...customParams
+      };
+
+      // Add current form values if not overridden by customParams
+      if (!customParams.q && searchQuery) searchParams.q = searchQuery;
+      if (!customParams.tags && selectedTags.length > 0) {
+        searchParams.tags = selectedTags.map(tag => tag.name || tag).join(',');
+      }
+      if (!customParams.course && courseFilter) searchParams.course = courseFilter;
+      if (!customParams.owner && ownerFilter) searchParams.owner = ownerFilter;
+      if (!customParams.is_public && visibilityFilter) {
+        searchParams.is_public = visibilityFilter === 'public';
+      }
+
+      const results = await searchNotes(searchParams);
+      
+      // Handle both old format (array) and new format (pagination object)
+      if (Array.isArray(results)) {
+        setSearchResults(results);
+        setTotalResults(results.length);
+        setTotalPages(1);
+        setHasNext(false);
+        setHasPrev(false);
+      } else {
+        setSearchResults(results.items || []);
+        setTotalResults(results.total || 0);
+        setTotalPages(results.pages || 0);
+        setHasNext(results.has_next || false);
+        setHasPrev(results.has_prev || false);
+      }
+    } catch (error) {
+      setError("Failed to search notes");
+      console.error("Error searching notes:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    performSearch();
+  };
+
+  const handleBookmarkToggle = async (notePublicId) => {
+    try {
+      await toggleBookmark(notePublicId);
+      const newBookmarked = new Set(bookmarkedNotes);
+      if (newBookmarked.has(notePublicId)) {
+        newBookmarked.delete(notePublicId);
+      } else {
+        newBookmarked.add(notePublicId);
+      }
+      setBookmarkedNotes(newBookmarked);
+    } catch (error) {
+      console.error("Error toggling bookmark:", error);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePerPageChange = (newPerPage) => {
+    setPerPage(newPerPage);
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedTags([]);
+    setCourseFilter("");
+    setOwnerFilter("");
+    setVisibilityFilter("");
+    setSearchResults([]);
+    setCurrentPage(1);
+  };
+
+  const handleTagClick = (tag) => {
+    const tagName = tag.name || tag;
+    if (!selectedTags.some(t => (t.name || t) === tagName)) {
+      setSelectedTags([...selectedTags, { name: tagName }]);
+      setCurrentPage(1);
+      // Trigger search after state updates
+      setTimeout(() => performSearch(), 0);
+    }
+  };
 
   useEffect(() => {
     // Trigger animation when component mounts
@@ -91,12 +236,6 @@ const Search = () => {
     logout();
     navigate("/");
     setIsMenuOpen(false);
-  };
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSortBy("newest");
-    setFilterBy("all");
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
