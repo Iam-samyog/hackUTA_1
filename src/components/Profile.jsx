@@ -11,17 +11,133 @@ import {
   Home,
   MessageCircle,
 } from "lucide-react";
-// import { useAuth } from "../context/AuthContext.jsx"; // Commented out for static version
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFilePdf, faTimes } from "@fortawesome/free-solid-svg-icons";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
+const FileUpload = ({ onFileSelect, accept, maxSize }) => {
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showSizeAlert, setShowSizeAlert] = useState(false);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === "application/pdf") {
+      if (file.size > maxSize * 1024 * 1024) {
+        setShowSizeAlert(true);
+      } else {
+        setSelectedFile(file);
+        onFileSelect(file);
+      }
+    } else {
+      alert(`Please drop a PDF file under ${maxSize}MB.`);
+    }
+  };
+
+  const handleChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      if (file.size > maxSize * 1024 * 1024) {
+        setShowSizeAlert(true);
+      } else {
+        setSelectedFile(file);
+        onFileSelect(file);
+      }
+    } else {
+      alert(`Please select a PDF file under ${maxSize}MB.`);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    onFileSelect(null);
+  };
+
+  return (
+    <div>
+      <div
+        className={`border-2 border-dashed rounded-md p-6 text-center ${
+          dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <p className="text-gray-600 mb-2">Drag and drop a PDF file here, or</p>
+        <label className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700 flex items-center gap-2">
+          <FontAwesomeIcon icon={faFilePdf} />
+          Add PDF
+          <input
+            type="file"
+            accept={accept}
+            className="hidden"
+            onChange={handleChange}
+          />
+        </label>
+      </div>
+      {selectedFile && (
+        <div className="mt-2 text-sm text-green-600 flex items-center">
+          Selected: {selectedFile.name}
+          <button
+            onClick={removeFile}
+            className="ml-2 text-red-600 hover:text-red-800 transition-colors"
+            aria-label="Remove file"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </div>
+      )}
+      {showSizeAlert && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-lg z-[9998]"></div>
+          <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">File Size Exceeded</h3>
+              <p className="text-gray-600 mb-6">Please select a PDF file smaller than 10MB.</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSizeAlert(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const Profile = () => {
-  // const { user } = useAuth(); // Commented out for static version
   const [activeNoteIndex, setActiveNoteIndex] = useState(0);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [likedNotes, setLikedNotes] = useState({});
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [file, setFile] = useState(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [showFileViewer, setShowFileViewer] = useState(false);
+  const [currentFile, setCurrentFile] = useState(null);
 
-  // Static user data (backend logic commented out)
   const userData = {
     name: "Sarah Johnson",
     username: "@sarahjohnson",
@@ -33,7 +149,6 @@ const Profile = () => {
     bio: "Medical student 📚 | Research enthusiast | Sharing study notes and insights",
   };
 
-  // Sample notes data
   const userNotes = [
     {
       id: 1,
@@ -65,7 +180,6 @@ const Profile = () => {
     },
   ];
 
-  // Sample courses data
   const enrolledCourses = [
     {
       id: 1,
@@ -100,7 +214,6 @@ const Profile = () => {
     { id: 4, name: "Computer Science", icon: "laptop-code" },
   ];
 
-  // Sample recommendations
   const recommendations = [
     {
       id: 1,
@@ -141,19 +254,34 @@ const Profile = () => {
     }));
   };
 
-  // Show loading if no user data (commented out for static version)
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-  //     </div>
-  //   );
-  // }
+  const handleFileSelect = (selectedFile) => {
+    setFile(selectedFile);
+  };
+
+  const handleCreateNote = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || !file) return;
+
+    try {
+      setCreateLoading(true);
+      console.log("Creating note:", { title, description, isPublic, file });
+      
+      setTitle("");
+      setDescription("");
+      setIsPublic(true);
+      setFile(null);
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error("Error creating note:", error);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
       <style>{`
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
         
         * {
@@ -166,15 +294,15 @@ const Profile = () => {
         @keyframes slideIn {
           from {
             opacity: 0;
-            transform: translateX(20px);
+            transform: translateY(20px);
           }
           to {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateY(0);
           }
         }
 
-        .slide-in {
+        .animate-slide-in {
           animation: slideIn 0.3s ease-out;
         }
       `}</style>
@@ -186,10 +314,8 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Profile Header */}
         <div className="pb-12 border-b border-blue-400 md:mt-12">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-            {/* Profile Picture */}
             <div className="relative">
               <img
                 src={userData.profilePicture}
@@ -199,7 +325,6 @@ const Profile = () => {
               <div className="absolute bottom-2 right-2 w-6 h-6 bg-blue-600 rounded-full border-4 border-white"></div>
             </div>
 
-            {/* User Info */}
             <div className="flex-1 text-center md:text-left">
               <div className="mb-4">
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-1 font-poppins">
@@ -208,7 +333,6 @@ const Profile = () => {
                 <p className="text-gray-500 text-lg">{userData.username}</p>
               </div>
 
-              {/* Stats */}
               <div className="flex justify-center md:justify-start gap-8 mb-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
@@ -230,10 +354,8 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Bio */}
               <p className="text-gray-700 mb-6 max-w-2xl">{userData.bio}</p>
 
-              {/* Action Buttons */}
               <div className="flex flex-wrap justify-center md:justify-start gap-3">
                 <button className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all">
                   Edit Profile
@@ -246,7 +368,6 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Notes Section */}
         <div className="py-12 border-b border-gray-200">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
@@ -260,9 +381,7 @@ const Profile = () => {
             </span>
           </div>
 
-          {/* Notes Grid */}
           <div className="relative bg-blue-600 rounded-xl p-6">
-            {/* Carousel Arrows */}
             <div className="absolute top-2 right-6 flex gap-2 z-10">
               <button
                 className="bg-blue-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-blue-800 transition"
@@ -285,17 +404,14 @@ const Profile = () => {
                 <i className="fas fa-arrow-right"></i>
               </button>
             </div>
-            {/* Horizontal Scroll Carousel */}
             <div
               className="flex overflow-x-auto gap-6 snap-x snap-mandatory pb-4 md:pb-0"
               style={{ scrollBehavior: "smooth" }}
             >
               {(() => {
-                // Always show up to 4 cards: notes + Add More card if less than 4
                 let visibleNotes = [];
                 if (userNotes.length < 4) {
                   visibleNotes = [...userNotes];
-                  // Fill with Add More card(s) if less than 4
                   while (visibleNotes.length < 4) {
                     visibleNotes.push({
                       id: `add-more-${visibleNotes.length}`,
@@ -303,7 +419,6 @@ const Profile = () => {
                     });
                   }
                 } else {
-                  // Arrow navigation: show 3 notes starting from activeNoteIndex, but do NOT repeat notes if total is less than 4
                   if (userNotes.length === 3) {
                     for (let i = 0; i < 4; i++) {
                       visibleNotes.push(
@@ -311,7 +426,6 @@ const Profile = () => {
                       );
                     }
                   } else {
-                    // If more than 4 notes, normal carousel
                     for (let i = 0; i < 4; i++) {
                       let idx = activeNoteIndex + i;
                       if (idx < userNotes.length) {
@@ -325,6 +439,7 @@ const Profile = () => {
                     <div
                       key={note.id}
                       className="min-w-[260px] md:min-w-[300px] bg-blue-950 border-2 border-dashed border-blue-700 rounded-xl overflow-hidden hover:border-blue-400 hover:bg-blue-800 transition-all cursor-pointer flex items-center justify-center min-h-[320px] snap-center"
+                      onClick={() => setShowCreateModal(true)}
                     >
                       <div className="text-center p-6">
                         <div className="w-16 h-16 bg-blue-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -385,9 +500,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Two Column Layout for Courses and Recommendations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 py-12">
-          {/* Enrolled Courses */}
           <div>
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
@@ -405,7 +518,6 @@ const Profile = () => {
               </button>
             </div>
 
-            {/* Course List */}
             <div className="space-y-4">
               {enrolledCourses.map((course, index) => {
                 const opacity = 0.4 + index * 0.15;
@@ -437,7 +549,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Recommendations */}
           <div>
             <div className="flex items-center gap-3 mb-8">
               <i className="fas fa-users text-blue-600 text-2xl"></i>
@@ -480,44 +591,164 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Bottom spacing */}
         <div className="h-12"></div>
       </div>
 
-      {/* Course Modal */}
-      {showCourseModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 font-poppins">
-                Add Course
-              </h3>
-              <button
-                onClick={() => setShowCourseModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-            <div className="space-y-3">
-              {availableCourses.map((course) => (
-                <button
-                  key={course.id}
-                  className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-600 hover:bg-blue-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <i
-                      className={`fas fa-${course.icon} text-blue-600 text-xl`}
-                    ></i>
+      {showCreateModal && (
+        <>
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-[9998]"></div>
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-[9999]">
+            <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-lg animate-slide-in">
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-poppins font-bold text-gray-900">
+                    Create New Note
+                  </h2>
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateNote} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
                   </div>
-                  <span className="text-lg font-semibold text-gray-900 font-poppins">
-                    {course.name}
-                  </span>
-                </button>
-              ))}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      PDF File *
+                    </label>
+                    <FileUpload
+                      onFileSelect={handleFileSelect}
+                      accept=".pdf"
+                      maxSize={10}
+                    />
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="isPublic"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="mr-2"
+                    />
+                    <label htmlFor="isPublic" className="text-sm text-gray-700">
+                      Make this note public
+                    </label>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-md transition-colors font-poppins font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createLoading || !file}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 font-poppins font-semibold"
+                    >
+                      {createLoading ? "Creating..." : "Create Note"}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        </>
+      )}
+
+      {showFileViewer && currentFile && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-[9998]"></div>
+          <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-poppins font-bold text-gray-900">
+                    Viewing: {currentFile.name}
+                  </h2>
+                  <button
+                    onClick={() => setShowFileViewer(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Close viewer"
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="p-4 bg-gray-100 rounded-md">
+                  <p className="text-gray-600">File preview would go here (e.g., embed PDF viewer).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showCourseModal && (
+        <>
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-[9998]"></div>
+          <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-lg">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 font-poppins">
+                  Add Course
+                </h3>
+                <button
+                  onClick={() => setShowCourseModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <FontAwesomeIcon icon={faTimes} className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                {availableCourses.map((course) => (
+                  <button
+                    key={course.id}
+                    className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-600 hover:bg-blue-50 transition-all"
+                  >
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <i
+                        className={`fas fa-${course.icon} text-blue-600 text-xl`}
+                      ></i>
+                    </div>
+                    <span className="text-lg font-semibold text-gray-900 font-poppins">
+                      {course.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
       )}
       <Footer></Footer>
     </div>
