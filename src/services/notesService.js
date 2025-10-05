@@ -187,11 +187,33 @@ export const downloadMarkdownFile = async (publicId) => {
 // Get markdown content for viewing
 export const getMarkdownContent = async (publicId) => {
   try {
+    // First try the markdown viewing endpoint
     const response = await apiRequest(`/notes/${publicId}/markdown`, {
       method: "GET",
     });
     return response;
   } catch (error) {
+    // If that fails, try to check if the note has markdown content first
+    if (error.message?.includes("404")) {
+      try {
+        // Check the note details to see if markdown is available
+        const noteDetails = await apiRequest(`/notes/${publicId}`, {
+          method: "GET",
+        });
+
+        if (!noteDetails.has_markdown) {
+          throw new Error(
+            "This note does not have AI-generated markdown content available yet. Please try again later after the AI processing is complete."
+          );
+        } else {
+          throw new Error(
+            "Markdown viewing endpoint is not available. The markdown content exists but cannot be displayed in the viewer."
+          );
+        }
+      } catch (noteError) {
+        throw new Error("Unable to check markdown availability for this note.");
+      }
+    }
     throw error;
   }
 };

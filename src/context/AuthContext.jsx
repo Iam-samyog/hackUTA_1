@@ -1,9 +1,36 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import {
-  getCurrentUser,
-  isAuthenticated,
-  logoutUser,
-} from "../services/authService.js";
+import { getCurrentUser, logoutUser } from "../services/authService.js";
+
+// Check if user is authenticated
+export const isAuthenticated = () => {
+  const token = localStorage.getItem("auth_token");
+  return !!token;
+};
+
+// Helper function to check if token seems valid (basic structure check)
+const isTokenValid = (token) => {
+  if (!token) return false;
+
+  try {
+    // JWT tokens have 3 parts separated by dots
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+
+    // Try to decode the payload (middle part) to check expiration
+    const payload = JSON.parse(atob(parts[1]));
+
+    // Check if token has expired
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      console.warn("Token has expired");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Invalid token format:", error);
+    return false;
+  }
+};
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -85,8 +112,10 @@ export const AuthProvider = ({ children }) => {
     const checkAuthStatus = async () => {
       console.log("Checking auth status...");
 
-      if (isAuthenticated()) {
-        console.log("Token found, checking for stored user data...");
+      const token = localStorage.getItem("auth_token");
+
+      if (token && isTokenValid(token)) {
+        console.log("Valid token found, checking for stored user data...");
 
         // Try to get user data from localStorage first
         const storedUser = localStorage.getItem("user_data");
@@ -155,6 +184,11 @@ export const AuthProvider = ({ children }) => {
             dispatch({ type: AUTH_ACTIONS.LOGOUT });
           }
         }
+      } else if (token && !isTokenValid(token)) {
+        console.warn("Invalid or expired token found - logging out");
+        logoutUser();
+        localStorage.removeItem("user_data");
+        dispatch({ type: AUTH_ACTIONS.LOGOUT });
       } else {
         console.log("No token found");
         dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });

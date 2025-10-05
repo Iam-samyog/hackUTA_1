@@ -28,6 +28,12 @@ const apiRequest = async (endpoint, options = {}) => {
   // Add Authorization header if token exists
   if (token) {
     defaultHeaders.Authorization = `Bearer ${token}`;
+    console.log(
+      `Adding Authorization header for ${endpoint}:`,
+      `Bearer ${token.substring(0, 20)}...`
+    );
+  } else {
+    console.warn(`No token available for ${endpoint} request`);
   }
 
   const config = {
@@ -89,8 +95,23 @@ const apiRequest = async (endpoint, options = {}) => {
       // Special handling for authorization errors
       if (response.status === 401) {
         console.warn("Unauthorized request - token may be invalid or expired");
-        // Remove invalid token
-        removeAuthToken();
+        console.log(
+          "Current token:",
+          token ? `${token.substring(0, 20)}...` : "None"
+        );
+
+        // Check if this is a missing token vs invalid token
+        if (!token) {
+          throw new Error(
+            "Authentication required. Please log in to perform this action."
+          );
+        } else {
+          // Remove invalid token and suggest re-login
+          removeAuthToken();
+          throw new Error(
+            "Your session has expired. Please log in again to continue."
+          );
+        }
       }
 
       console.error(`API Error for ${endpoint}:`, {
@@ -98,6 +119,8 @@ const apiRequest = async (endpoint, options = {}) => {
         statusText: response.statusText,
         error: errorMessage,
         url: url,
+        hasToken: !!token,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : "None",
       });
 
       throw new Error(errorMessage);
@@ -105,7 +128,13 @@ const apiRequest = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    console.error("API Request Error:", { url, error: error.message, config });
+    console.error("API Request Error:", {
+      url,
+      error: error.message,
+      config,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : "None",
+    });
     throw error;
   }
 };
@@ -120,6 +149,12 @@ const apiFormRequest = async (endpoint, formData, options = {}) => {
   // Add Authorization header if token exists
   if (token) {
     defaultHeaders.Authorization = `Bearer ${token}`;
+    console.log(
+      `Adding Authorization header for form request ${endpoint}:`,
+      `Bearer ${token.substring(0, 20)}...`
+    );
+  } else {
+    console.warn(`No token available for form request ${endpoint}`);
   }
 
   const config = {
@@ -130,16 +165,56 @@ const apiFormRequest = async (endpoint, formData, options = {}) => {
   };
 
   try {
+    console.log(`Making form request to: ${url}`, {
+      method: config.method,
+      hasToken: !!token,
+    });
+
     const response = await fetch(url, config);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      const errorMessage =
+        data.message || `HTTP error! status: ${response.status}`;
+
+      // Special handling for authorization errors
+      if (response.status === 401) {
+        console.warn(
+          "Unauthorized form request - token may be invalid or expired"
+        );
+        console.log(
+          "Current token:",
+          token ? `${token.substring(0, 20)}...` : "None"
+        );
+
+        if (!token) {
+          throw new Error(
+            "Authentication required. Please log in to perform this action."
+          );
+        } else {
+          removeAuthToken();
+          throw new Error(
+            "Your session has expired. Please log in again to continue."
+          );
+        }
+      }
+
+      console.error(`Form Request Error for ${endpoint}:`, {
+        status: response.status,
+        error: errorMessage,
+        hasToken: !!token,
+      });
+
+      throw new Error(errorMessage);
     }
 
     return data;
   } catch (error) {
-    console.error("API Form Request Error:", error);
+    console.error("API Form Request Error:", {
+      url,
+      error: error.message,
+      hasToken: !!token,
+    });
     throw error;
   }
 };

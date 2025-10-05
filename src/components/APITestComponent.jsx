@@ -54,11 +54,11 @@ const APITestComponent = () => {
         }),
     },
     {
-      name: "Test Reaction (Like)",
+      name: "Test Reaction (Concise)",
       fn: async () => {
         const notes = await getPublicNotes();
         if (notes.length > 0) {
-          return await toggleReaction(notes[0].public_id, "like");
+          return await toggleReaction(notes[0].public_id, "concise");
         }
         throw new Error("No notes available for testing");
       },

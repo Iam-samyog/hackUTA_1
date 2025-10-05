@@ -5,6 +5,12 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    host: true, // Enable external access
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      "8ade92e4e169.ngrok-free.app",
+    ],
     proxy: {
       "/api": {
         target: "http://localhost:5000",

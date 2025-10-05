@@ -66,7 +66,7 @@ const CORSDebugger = () => {
 
     // Test reaction
     await testEndpoint("POST", "/notes/test-note-id/reactions", {
-      reaction_type: "like",
+      reaction_type: "concise",
     });
 
     // Test OPTIONS request (preflight)

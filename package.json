@@ -17,10 +17,19 @@
     "@fortawesome/react-fontawesome": "^3.1.0",
     "@tailwindcss/vite": "^4.1.14",
     "animejs": "^4.2.0",
+    "dompurify": "^3.2.7",
+    "html-pdf-node": "^1.0.8",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
+    "katex": "^0.16.23",
     "lucide-react": "^0.544.0",
+    "marked": "^16.3.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.3"
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.9.3",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
