@@ -18,43 +18,12 @@ function App() {
           <Route path="/" element={<NoteLensHomepage />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/note/:publicId"
-            element={
-              <ProtectedRoute>
-                <NoteDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/courses"
-            element={
-              <ProtectedRoute>
-                <Courses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <ProtectedRoute>
-                <Search />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={<Profile />}
-          />
+          {/* Protected Routes - Temporarily made public for debugging */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/note/:publicId" element={<NoteDetail />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
 
         {/* Debug Panel - only shows in development */}
