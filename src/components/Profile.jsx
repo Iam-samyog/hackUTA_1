@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,7 +13,22 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilePdf, faTimes, faCamera } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFilePdf,
+  faTimes,
+  faCamera,
+} from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  getUserProfile,
+  updateUserProfile,
+  getRecommendedUsers,
+  followUser,
+  unfollowUser,
+} from "../services/userService.js";
+import { searchNotes } from "../services/searchService.js";
+import { getUserStats } from "../services/statsService.js";
+import { getMyCourses } from "../services/courseService.js";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -76,7 +92,8 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
     } else {
       // Desktop: open webcam modal
       setShowWebcamModal(true);
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
         .then((stream) => {
           setWebcamStream(stream);
           if (videoRef.current) {
@@ -84,7 +101,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
           }
         })
         .catch(() => {
-          alert('Unable to access webcam.');
+          alert("Unable to access webcam.");
         });
     }
   };
@@ -95,27 +112,27 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
     if (video && canvas) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], 'webcam.jpg', { type: 'image/jpeg' });
+          const file = new File([blob], "webcam.jpg", { type: "image/jpeg" });
           setSelectedFile(file);
           onFileSelect(file);
           setShowWebcamModal(false);
           if (webcamStream) {
-            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream.getTracks().forEach((track) => track.stop());
             setWebcamStream(null);
           }
         }
-      }, 'image/jpeg');
+      }, "image/jpeg");
     }
   };
 
   const handleWebcamModalClose = () => {
     setShowWebcamModal(false);
     if (webcamStream) {
-      webcamStream.getTracks().forEach(track => track.stop());
+      webcamStream.getTracks().forEach((track) => track.stop());
       setWebcamStream(null);
     }
   };
@@ -197,8 +214,12 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-lg z-[9998]"></div>
           <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">File Size Exceeded</h3>
-              <p className="text-gray-600 mb-6">Please select a file smaller than 10MB.</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                File Size Exceeded
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Please select a file smaller than 10MB.
+              </p>
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowSizeAlert(false)}
@@ -215,11 +236,26 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
       {showWebcamModal && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-lg flex flex-col items-center">
-            <video ref={videoRef} autoPlay playsInline className="w-80 h-60 bg-black rounded" />
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-80 h-60 bg-black rounded"
+            />
+            <canvas ref={canvasRef} style={{ display: "none" }} />
             <div className="mt-4 flex gap-4">
-              <button onClick={handleWebcamCapture} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">Capture</button>
-              <button onClick={handleWebcamModalClose} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 font-semibold">Cancel</button>
+              <button
+                onClick={handleWebcamCapture}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
+              >
+                Capture
+              </button>
+              <button
+                onClick={handleWebcamModalClose}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 font-semibold"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -229,6 +265,21 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
 };
 
 const Profile = () => {
+  const { user, isAuthenticated } = useAuth();
+  const { username } = useParams(); // Get username from URL params
+
+  // States for profile data (moved up to avoid initialization issues)
+  const [profileUser, setProfileUser] = useState(null);
+  const [profileNotes, setProfileNotes] = useState([]);
+  const [profileStats, setProfileStats] = useState(null);
+  const [profileCourses, setProfileCourses] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  // UI states
   const [activeNoteIndex, setActiveNoteIndex] = useState(0);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [likedNotes, setLikedNotes] = useState({});
@@ -241,74 +292,343 @@ const Profile = () => {
   const [showFileViewer, setShowFileViewer] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
 
-  const userData = {
-    name: "Sarah Johnson",
-    username: "@sarahjohnson",
-    profilePicture:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-    followers: 1234,
-    following: 567,
-    totalPosts: 89,
-    bio: "Medical student 📚 | Research enthusiast | Sharing study notes and insights",
+  // Check if this is the current user's profile
+  // Need to check multiple sources since user context might not be loaded yet
+  const getCurrentUsername = () => {
+    // Try context first
+    if (user?.username) return user.username;
+
+    // Try localStorage
+    try {
+      const storedUser = localStorage.getItem("user_data");
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        if (userData?.username) return userData.username;
+      }
+    } catch (e) {
+      console.warn("Failed to parse stored user data:", e);
+    }
+
+    return null;
   };
 
-  const userNotes = [
-    {
-      id: 1,
-      title: "Organic Chemistry - Reactions",
-      description:
-        "Comprehensive notes on substitution and elimination reactions",
-      thumbnail:
-        "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&h=600&fit=crop",
-      likes: 234,
-      views: 1250,
-    },
-    {
-      id: 2,
-      title: "Human Anatomy - Cardiovascular System",
-      description: "Detailed study guide for cardiovascular physiology",
-      thumbnail:
-        "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=600&fit=crop",
-      likes: 189,
-      views: 980,
-    },
-    {
-      id: 3,
-      title: "Biochemistry - Metabolism Pathways",
-      description: "Visual maps of glycolysis and Krebs cycle",
-      thumbnail:
-        "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800&h=600&fit=crop",
-      likes: 312,
-      views: 1580,
-    },
-  ];
+  const currentUsername = getCurrentUsername();
+  const [isOwnProfile, setIsOwnProfile] = useState(
+    !username || username === currentUsername
+  );
 
-  const enrolledCourses = [
-    {
-      id: 1,
-      name: "Advanced Organic Chemistry",
-      institution: "Stanford University",
-      progress: 75,
-    },
-    {
-      id: 2,
-      name: "Human Physiology",
-      institution: "MIT OpenCourseWare",
-      progress: 60,
-    },
-    {
-      id: 3,
-      name: "Medical Biochemistry",
-      institution: "Harvard Medical School",
-      progress: 85,
-    },
-    {
-      id: 4,
-      name: "Clinical Pharmacology",
-      institution: "Johns Hopkins University",
-      progress: 45,
-    },
-  ];
+  // Re-evaluate isOwnProfile when user data changes
+  useEffect(() => {
+    const newCurrentUsername = getCurrentUsername();
+    const newIsOwnProfile = !username || username === newCurrentUsername;
+    if (newIsOwnProfile !== isOwnProfile) {
+      console.log(
+        "isOwnProfile updated:",
+        newIsOwnProfile,
+        "Username:",
+        username,
+        "Current:",
+        newCurrentUsername
+      );
+      setIsOwnProfile(newIsOwnProfile);
+    }
+  }, [user, profileUser, username]);
+
+  // Re-evaluate when stats data updates the stored user
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newCurrentUsername = getCurrentUsername();
+      const newIsOwnProfile = !username || username === newCurrentUsername;
+      if (newIsOwnProfile !== isOwnProfile) {
+        console.log("isOwnProfile updated from storage:", newIsOwnProfile);
+        setIsOwnProfile(newIsOwnProfile);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [username, isOwnProfile]);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (isOwnProfile) {
+          // For own profile, use context user data as primary source
+          console.log("Loading own profile...");
+
+          // Use user from context immediately
+          const contextUser = user;
+          console.log("Context user:", contextUser);
+
+          if (contextUser) {
+            setProfileUser(contextUser);
+          } else {
+            // Fallback to localStorage
+            const storedUser = localStorage.getItem("user_data");
+            const authToken = localStorage.getItem("auth_token");
+
+            console.log("Checking localStorage:", {
+              hasStoredUser: !!storedUser,
+              hasAuthToken: !!authToken,
+            });
+
+            if (storedUser) {
+              try {
+                const parsedUser = JSON.parse(storedUser);
+                console.log("Using stored user data:", parsedUser);
+                setProfileUser(parsedUser);
+              } catch (parseError) {
+                console.error("Failed to parse stored user data:", parseError);
+              }
+            } else if (authToken) {
+              console.log(
+                "Have auth token but no stored user data - will get from API"
+              );
+              // Will be filled by stats data below
+            }
+          }
+
+          // Try to fetch additional data, but don't block on failures
+          try {
+            const [statsData, coursesData, recommendationsData] =
+              await Promise.all([
+                // Get stats first to know the username
+                getUserStats().catch(() => null),
+                getMyCourses().catch(() => []),
+                getRecommendedUsers(3).catch(() => []),
+              ]);
+
+            console.log("Stats data received:", statsData);
+
+            // Now get notes using the username from stats or context
+            const usernameForNotes =
+              statsData?.username || contextUser?.username || user?.username;
+            console.log("Username for notes fetch:", usernameForNotes);
+
+            let actualNotesData = [];
+            if (usernameForNotes) {
+              try {
+                const notesResult = await searchNotes({
+                  owner: usernameForNotes,
+                });
+                console.log("Search API notes result:", notesResult);
+                actualNotesData = notesResult?.items || notesResult || [];
+              } catch (err) {
+                console.warn(
+                  "Search API failed, trying getUserNotes fallback:",
+                  err
+                );
+                try {
+                  const { getUserNotes } = await import(
+                    "../services/notesService.js"
+                  );
+                  actualNotesData = await getUserNotes().catch(() => []);
+                } catch (importErr) {
+                  console.warn("Fallback getUserNotes also failed:", importErr);
+                }
+              }
+            }
+
+            console.log(
+              "Final notes data:",
+              actualNotesData,
+              "Length:",
+              Array.isArray(actualNotesData)
+                ? actualNotesData.length
+                : actualNotesData?.items?.length || 0
+            );
+
+            // If we don't have profile user data yet, try to use stats data
+            if (
+              !contextUser &&
+              !profileUser &&
+              statsData &&
+              statsData.username
+            ) {
+              console.log("Using stats data for profile user:", statsData);
+              const userFromStats = {
+                username: statsData.username,
+                name: statsData.full_name || statsData.username,
+                full_name: statsData.full_name,
+                id: statsData.user_id,
+                // Add any other available fields from stats
+                ...statsData,
+              };
+              setProfileUser(userFromStats);
+
+              // Also try to store this in localStorage for future use
+              localStorage.setItem("user_data", JSON.stringify(userFromStats));
+              console.log("Stored user data from stats to localStorage");
+
+              // Update isOwnProfile check
+              const newIsOwnProfile =
+                !username || username === statsData.username;
+              if (newIsOwnProfile !== isOwnProfile) {
+                console.log(
+                  "Updating isOwnProfile based on stats data:",
+                  newIsOwnProfile
+                );
+                setIsOwnProfile(newIsOwnProfile);
+              }
+            }
+
+            setProfileNotes(
+              Array.isArray(actualNotesData)
+                ? actualNotesData
+                : actualNotesData?.items || []
+            );
+            setProfileStats(statsData);
+            setProfileCourses(
+              Array.isArray(coursesData)
+                ? coursesData
+                : coursesData?.items || []
+            );
+            setRecommendations(
+              Array.isArray(recommendationsData)
+                ? recommendationsData
+                : recommendationsData?.items || []
+            );
+          } catch (err) {
+            console.warn("Failed to fetch additional profile data:", err);
+          }
+        } else {
+          // For other user's profile
+          console.log(`Loading profile for user: ${username}`);
+
+          try {
+            const otherUserProfile = await getUserProfile(username);
+            console.log("Other user profile:", otherUserProfile);
+            setProfileUser(otherUserProfile);
+
+            // Check if current user is already following this user
+            if (isAuthenticated && otherUserProfile) {
+              // You might want to add a followStatus check here if your API supports it
+              // For now, we'll assume not following initially
+              setIsFollowing(false);
+            }
+
+            // Fetch their notes using search API
+            try {
+              const notesData = await searchNotes({
+                owner: username,
+                is_public: true, // Only show public notes for other users
+              });
+              console.log(`Notes for ${username}:`, notesData);
+
+              setProfileNotes(
+                Array.isArray(notesData) ? notesData : notesData?.items || []
+              );
+
+              // Try to get their courses if API supports it
+              const coursesData = await getMyCourses(username).catch(() => []);
+              setProfileCourses(
+                Array.isArray(coursesData)
+                  ? coursesData
+                  : coursesData?.items || []
+              );
+            } catch (err) {
+              console.warn(`Failed to fetch ${username}'s notes:`, err);
+              setProfileNotes([]);
+              setProfileCourses([]);
+            }
+          } catch (err) {
+            console.error(`Failed to fetch profile for ${username}:`, err);
+            setError(`User "${username}" not found`);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+        setError("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [username, isOwnProfile, user]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{error}</h1>
+          <button
+            onClick={() => window.history.back()}
+            className="text-blue-600 hover:text-blue-800 font-semibold"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare display data - prioritize stats data for username if available
+  const displayUser = profileUser || user || {};
+
+  // If we have stats data but no profile user, use stats data for user info
+  if (!displayUser.username && profileStats?.username) {
+    console.log("Using stats data for display user:", profileStats);
+    Object.assign(displayUser, {
+      username: profileStats.username,
+      name: profileStats.full_name || profileStats.username,
+      full_name: profileStats.full_name,
+    });
+  }
+
+  const userData = {
+    name:
+      displayUser.full_name ||
+      displayUser.name ||
+      displayUser.username ||
+      profileStats?.username || // Add stats username as backup
+      "User",
+    username:
+      displayUser.username ||
+      profileStats?.username ||
+      getCurrentUsername() ||
+      "user",
+    profilePicture:
+      displayUser.profile_picture ||
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+    followers: displayUser.followers_count || profileStats?.followers || 0,
+    following: displayUser.following_count || profileStats?.following || 0,
+    totalPosts:
+      displayUser.notes_count ||
+      profileStats?.total_notes ||
+      profileNotes.length ||
+      0,
+    bio: displayUser.bio || displayUser.profile_bio || "Welcome to my profile!",
+  };
+
+  // Debug logging
+  console.log("Profile Component Debug:", {
+    isOwnProfile,
+    username,
+    profileUser,
+    userFromContext: user,
+    displayUser,
+    userData,
+    profileNotes: profileNotes.length,
+    profileCourses: profileCourses.length,
+    isAuthenticated,
+    authToken: localStorage.getItem("auth_token") ? "present" : "missing",
+    storedUserData: localStorage.getItem("user_data") ? "present" : "missing",
+  });
 
   const availableCourses = [
     { id: 1, name: "Physics", icon: "atom" },
@@ -317,36 +637,26 @@ const Profile = () => {
     { id: 4, name: "Computer Science", icon: "laptop-code" },
   ];
 
-  const recommendations = [
+  // Fallback data if API calls fail
+  const fallbackCourses = [
     {
       id: 1,
-      name: "Michael Chen",
-      username: "@mchen",
-      profilePicture:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
-      followers: 2341,
-      bio: "PhD candidate in Neuroscience",
-      mutualFollowers: 12,
+      name: "Sample Course",
+      institution: "University",
+      progress: 0,
     },
+  ];
+
+  const fallbackRecommendations = [
     {
-      id: 2,
-      name: "Emma Wilson",
-      username: "@emmaw",
+      id: 1,
+      name: "Welcome User",
+      username: "@welcome",
       profilePicture:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop",
-      followers: 1876,
-      bio: "Chemistry tutor & content creator",
-      mutualFollowers: 8,
-    },
-    {
-      id: 3,
-      name: "David Park",
-      username: "@dpark",
-      profilePicture:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop",
-      followers: 3102,
-      bio: "Medical school graduate",
-      mutualFollowers: 15,
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
+      followers: 0,
+      bio: "New user",
+      mutualFollowers: 0,
     },
   ];
 
@@ -355,6 +665,77 @@ const Profile = () => {
       ...prev,
       [noteId]: !prev[noteId],
     }));
+  };
+
+  const handleFollowToggle = async (targetUsername) => {
+    if (!isAuthenticated) {
+      alert("Please log in to follow users");
+      return;
+    }
+
+    try {
+      setFollowLoading(true);
+
+      if (isFollowing) {
+        // Unfollow user
+        await unfollowUser(targetUsername);
+
+        // Update local state
+        setIsFollowing(false);
+
+        // Update follower count optimistically
+        setProfileUser((prev) => ({
+          ...prev,
+          followers_count: Math.max((prev?.followers_count || 0) - 1, 0),
+        }));
+
+        console.log(`Successfully unfollowed ${targetUsername}`);
+
+        // Show success feedback
+        const successMsg = document.createElement("div");
+        successMsg.innerHTML = `✓ Unfollowed @${targetUsername}`;
+        successMsg.className =
+          "fixed top-4 right-4 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg z-50";
+        document.body.appendChild(successMsg);
+        setTimeout(() => document.body.removeChild(successMsg), 3000);
+      } else {
+        // Follow user
+        await followUser(targetUsername);
+
+        // Update local state
+        setIsFollowing(true);
+
+        // Update follower count optimistically
+        setProfileUser((prev) => ({
+          ...prev,
+          followers_count: (prev?.followers_count || 0) + 1,
+        }));
+
+        // Remove from recommendations if present
+        setRecommendations((prev) =>
+          prev.filter((user) => user.username !== targetUsername)
+        );
+
+        console.log(`Successfully followed ${targetUsername}`);
+
+        // Show success feedback
+        const successMsg = document.createElement("div");
+        successMsg.innerHTML = `✓ Successfully followed @${targetUsername}`;
+        successMsg.className =
+          "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50";
+        document.body.appendChild(successMsg);
+        setTimeout(() => document.body.removeChild(successMsg), 3000);
+      }
+    } catch (error) {
+      console.error("Failed to toggle follow status:", error);
+      alert(
+        `Failed to ${
+          isFollowing ? "unfollow" : "follow"
+        } user. Please try again.`
+      );
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const handleFileSelect = (selectedFile) => {
@@ -368,7 +749,7 @@ const Profile = () => {
     try {
       setCreateLoading(true);
       console.log("Creating note:", { title, description, isPublic, file });
-      
+
       setTitle("");
       setDescription("");
       setIsPublic(true);
@@ -439,19 +820,19 @@ const Profile = () => {
               <div className="flex justify-center md:justify-start gap-8 mb-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {userData.totalPosts}
+                    {userData.totalPosts || 0}
                   </div>
                   <div className="text-sm text-gray-600">Posts</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {userData.followers.toLocaleString()}
+                    {(userData.followers || 0).toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-600">Followers</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {userData.following}
+                    {userData.following || 0}
                   </div>
                   <div className="text-sm text-gray-600">Following</div>
                 </div>
@@ -460,12 +841,55 @@ const Profile = () => {
               <p className="text-gray-700 mb-6 max-w-2xl">{userData.bio}</p>
 
               <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                <button className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all">
-                  Edit Profile
-                </button>
-                <button className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all">
-                  Share Profile
-                </button>
+                {isOwnProfile ? (
+                  <>
+                    <button className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all">
+                      Edit Profile
+                    </button>
+                    <button className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all">
+                      Share Profile
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleFollowToggle(userData.username)}
+                    disabled={followLoading}
+                    className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                      followLoading
+                        ? "bg-gray-400 text-white cursor-not-allowed"
+                        : isFollowing
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    {followLoading ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        {isFollowing ? "Unfollowing..." : "Following..."}
+                      </>
+                    ) : isFollowing ? (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        Follow
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -476,11 +900,11 @@ const Profile = () => {
             <div className="flex items-center gap-3">
               <i className="fas fa-file-alt text-blue-600 text-2xl"></i>
               <h2 className="text-2xl font-bold text-gray-900 font-poppins">
-                My Notes
+                {userData.name}'s Notes
               </h2>
             </div>
             <span className="text-sm text-gray-500">
-              {userNotes.length} notes
+              {profileNotes.length} notes
             </span>
           </div>
 
@@ -490,7 +914,8 @@ const Profile = () => {
                 className="bg-blue-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-blue-800 transition"
                 onClick={() =>
                   setActiveNoteIndex(
-                    (prev) => (prev - 4 + userNotes.length) % userNotes.length
+                    (prev) =>
+                      (prev - 4 + profileNotes.length) % profileNotes.length
                   )
                 }
                 aria-label="Previous"
@@ -500,7 +925,7 @@ const Profile = () => {
               <button
                 className="bg-blue-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-blue-800 transition"
                 onClick={() =>
-                  setActiveNoteIndex((prev) => (prev + 4) % userNotes.length)
+                  setActiveNoteIndex((prev) => (prev + 4) % profileNotes.length)
                 }
                 aria-label="Next"
               >
@@ -513,8 +938,8 @@ const Profile = () => {
             >
               {(() => {
                 let visibleNotes = [];
-                if (userNotes.length < 4) {
-                  visibleNotes = [...userNotes];
+                if (profileNotes.length < 4) {
+                  visibleNotes = [...profileNotes];
                   while (visibleNotes.length < 4) {
                     visibleNotes.push({
                       id: `add-more-${visibleNotes.length}`,
@@ -522,17 +947,19 @@ const Profile = () => {
                     });
                   }
                 } else {
-                  if (userNotes.length === 3) {
+                  if (profileNotes.length === 3) {
                     for (let i = 0; i < 4; i++) {
                       visibleNotes.push(
-                        userNotes[(activeNoteIndex + i) % userNotes.length]
+                        profileNotes[
+                          (activeNoteIndex + i) % profileNotes.length
+                        ]
                       );
                     }
                   } else {
                     for (let i = 0; i < 4; i++) {
                       let idx = activeNoteIndex + i;
-                      if (idx < userNotes.length) {
-                        visibleNotes.push(userNotes[idx]);
+                      if (idx < profileNotes.length) {
+                        visibleNotes.push(profileNotes[idx]);
                       }
                     }
                   }
@@ -622,7 +1049,10 @@ const Profile = () => {
             </div>
 
             <div className="space-y-4">
-              {enrolledCourses.map((course, index) => {
+              {(profileCourses.length > 0
+                ? profileCourses
+                : fallbackCourses
+              ).map((course, index) => {
                 const opacity = 0.4 + index * 0.15;
                 return (
                   <div
@@ -638,10 +1068,12 @@ const Profile = () => {
                       ></div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 text-sm font-poppins">
-                          {course.name}
+                          {course.name || course.course_name}
                         </h3>
                         <p className="text-xs text-gray-600">
-                          {course.institution}
+                          {course.institution ||
+                            course.course_code ||
+                            "University"}
                         </p>
                       </div>
                     </div>
@@ -661,28 +1093,37 @@ const Profile = () => {
             </div>
 
             <div className="space-y-4">
-              {recommendations.map((user) => (
+              {(recommendations.length > 0
+                ? recommendations
+                : fallbackRecommendations
+              ).map((user) => (
                 <div
                   key={user.id}
                   className="py-4 hover:bg-blue-50 transition-all px-2 -mx-2 rounded"
                 >
                   <div className="flex items-center gap-4">
                     <img
-                      src={user.profilePicture}
-                      alt={user.name}
+                      src={user.profilePicture || user.profile_picture}
+                      alt={user.name || user.full_name}
                       className="w-14 h-14 rounded-full object-cover border-2 border-blue-200"
                     />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 font-poppins">
-                        {user.name}
+                        {user.name || user.full_name}
                       </h3>
                       <p className="text-sm text-gray-600">{user.username}</p>
-                      <p className="text-xs text-gray-500 mt-1">{user.bio}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {user.bio || user.profile_bio}
+                      </p>
                       <p className="text-xs text-blue-600 mt-1">
-                        {user.mutualFollowers} mutual followers
+                        {user.mutualFollowers || user.mutual_followers || 0}{" "}
+                        mutual followers
                       </p>
                     </div>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2 text-sm whitespace-nowrap">
+                    <button
+                      onClick={() => handleFollowToggle(user.username)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2 text-sm whitespace-nowrap"
+                    >
                       <i className="fas fa-user-plus"></i>
                       Follow
                     </button>
@@ -808,7 +1249,9 @@ const Profile = () => {
                   </button>
                 </div>
                 <div className="p-4 bg-gray-100 rounded-md">
-                  <p className="text-gray-600">File preview would go here (e.g., embed PDF viewer).</p>
+                  <p className="text-gray-600">
+                    File preview would go here (e.g., embed PDF viewer).
+                  </p>
                 </div>
               </div>
             </div>

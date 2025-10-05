@@ -1,37 +1,71 @@
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTimes, faSearch } from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Toggle mobile menu
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  // Handle search functionality
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+      setIsMenuOpen(false);
+    }
+  };
+
   // Smooth scroll to section and close menu if mobile
   const scrollToSection = (id) => {
-    const section = document.getElementById(id);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-      setIsMenuOpen(false);
+    // Only scroll to sections if we're on the home page
+    if (location.pathname === "/" && !isAuthenticated) {
+      const section = document.getElementById(id);
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
+        setIsMenuOpen(false);
+      }
     }
   };
 
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
+    navigate("/");
   };
+
+  // Determine if we should show landing page links
+  const showLandingLinks = location.pathname === "/" && !isAuthenticated;
+
+  // Debug logging for navbar state
+  console.log("Navbar Debug:", {
+    isAuthenticated,
+    user,
+    location: location.pathname,
+    authToken: localStorage.getItem("auth_token") ? "present" : "missing",
+  });
+
+  // Enhanced auth check - also check localStorage token
+  const hasAuthToken = localStorage.getItem("auth_token");
+  const shouldRedirectToDashboard = isAuthenticated || hasAuthToken;
 
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2 bg-white/70">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          {/* Logo with Home Redirect */}
-          <Link to="/" className="flex items-center space-x-2">
+          {/* Logo with Smart Redirect */}
+          <Link
+            to={shouldRedirectToDashboard ? "/dashboard" : "/"}
+            className="flex items-center space-x-2"
+          >
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <svg
                 className="w-5 h-5 text-white"
@@ -54,39 +88,64 @@ const Navbar = () => {
 
           {/* Desktop Links + Search + Button */}
           <div className="hidden md:flex items-center space-x-6">
-            <button
-              onClick={() => scrollToSection("features")}
-              className="text-black hover:text-blue-600 font-semibold transition-colors"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => scrollToSection("how-it-works")}
-              className="text-black hover:text-blue-600 font-semibold transition-colors"
-            >
-              How it Works
-            </button>
+            {showLandingLinks && (
+              <>
+                <button
+                  onClick={() => scrollToSection("features")}
+                  className="text-black hover:text-blue-600 font-semibold transition-colors"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => scrollToSection("how-it-works")}
+                  className="text-black hover:text-blue-600 font-semibold transition-colors"
+                >
+                  How it Works
+                </button>
+              </>
+            )}
+
+            {isAuthenticated && (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="text-black hover:text-blue-600 font-semibold transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/search"
+                  className="text-black hover:text-blue-600 font-semibold transition-colors"
+                >
+                  Search
+                </Link>
+                <Link
+                  to="/profile"
+                  className="text-black hover:text-blue-600 font-semibold transition-colors"
+                >
+                  Profile
+                </Link>
+              </>
+            )}
 
             {/* Search Bar */}
-            <div className="flex items-center bg-white rounded-lg px-4 py-2 border border-gray-400">
+            <form
+              onSubmit={handleSearch}
+              className="flex items-center bg-white rounded-lg px-4 py-2 border border-gray-400"
+            >
               <FontAwesomeIcon icon={faSearch} className="text-gray-400 mr-2" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search notes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="outline-none text-gray-700 bg-transparent w-40"
               />
-            </div>
+            </form>
 
-            {/* Get Started Button */}
+            {/* Authentication Button */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <Link to="/dashboard">
-                  <button className="px-4 py-2 text-blue-600 hover:text-blue-800 font-semibold transition-colors">
-                    Dashboard
-                  </button>
-                </Link>
                 <span className="text-gray-600 text-sm">
                   Welcome, {user?.username || "User"}
                 </span>
@@ -122,8 +181,11 @@ const Navbar = () => {
         }`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          {/* Mobile Logo with Home Redirect */}
-          <Link to="/" className="text-xl font-poppins font-bold text-blue-900">
+          {/* Mobile Logo with Smart Redirect */}
+          <Link
+            to={isAuthenticated ? "/dashboard" : "/"}
+            className="text-xl font-poppins font-bold text-blue-900"
+          >
             NoteLens
           </Link>
           <button onClick={toggleMenu}>
@@ -132,47 +194,68 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 mx-6 mt-4">
+        <form
+          onSubmit={handleSearch}
+          className="flex items-center bg-gray-100 rounded-lg px-3 py-2 mx-6 mt-4"
+        >
           <FontAwesomeIcon icon={faSearch} className="text-gray-400 mr-2" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="outline-none bg-transparent text-gray-700 w-full"
           />
-        </div>
+        </form>
 
         {/* Mobile Links */}
         <div className="flex flex-col mt-6 space-y-4 px-6">
-          <button
-            onClick={() => scrollToSection("features")}
-            className="text-gray-700 hover:text-blue-600 font-semibold text-left"
-          >
-            Features
-          </button>
-          <button
-            onClick={() => scrollToSection("how-it-works")}
-            className="text-gray-700 hover:text-blue-600 font-semibold text-left"
-          >
-            How it Works
-          </button>
-          {isAuthenticated ? (
+          {showLandingLinks && (
             <>
-              <Link to="/dashboard">
-                <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
+              <button
+                onClick={() => scrollToSection("features")}
+                className="text-gray-700 hover:text-blue-600 font-semibold text-left"
+              >
+                Features
+              </button>
+              <button
+                onClick={() => scrollToSection("how-it-works")}
+                className="text-gray-700 hover:text-blue-600 font-semibold text-left"
+              >
+                How it Works
+              </button>
+            </>
+          )}
+
+          {isAuthenticated && (
+            <>
+              <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                <button className="text-gray-700 hover:text-blue-600 font-semibold text-left">
                   Dashboard
                 </button>
               </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-all text-left"
-              >
-                Logout
-              </button>
+              <Link to="/search" onClick={() => setIsMenuOpen(false)}>
+                <button className="text-gray-700 hover:text-blue-600 font-semibold text-left">
+                  Search
+                </button>
+              </Link>
+              <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                <button className="text-gray-700 hover:text-blue-600 font-semibold text-left">
+                  Profile
+                </button>
+              </Link>
             </>
+          )}
+
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-all text-left"
+            >
+              Logout
+            </button>
           ) : (
-            <Link to="/login">
+            <Link to="/login" onClick={() => setIsMenuOpen(false)}>
               <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
                 Get Started
               </button>

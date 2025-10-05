@@ -33,10 +33,12 @@ import {
   faFileAlt,
   faFileText,
   faFilePdf,
+  faPlus,
+  faSort,
 } from "@fortawesome/free-solid-svg-icons";
 
 const Search = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -54,6 +56,7 @@ const Search = () => {
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isSearchBoxVisible, setIsSearchBoxVisible] = useState(true);
 
   // Search form state
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,10 +64,13 @@ const Search = () => {
   const [courseFilter, setCourseFilter] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterBy, setFilterBy] = useState("all");
 
   // Data
   const [popularTags, setPopularTags] = useState([]);
   const [bookmarkedNotes, setBookmarkedNotes] = useState(new Set());
+  const [allNotes, setAllNotes] = useState([]);
 
   // Markdown viewer state
   const [showMarkdownViewer, setShowMarkdownViewer] = useState(false);
@@ -72,6 +78,7 @@ const Search = () => {
 
   useEffect(() => {
     fetchPopularTags();
+
     // Initialize search from URL params
     const initialQuery = searchParams.get("q") || "";
     const initialTags = searchParams.get("tags") || "";
@@ -81,12 +88,15 @@ const Search = () => {
       setSelectedTags(initialTags.split(",").map((tag) => ({ name: tag })));
     }
 
-    // Perform initial search if there are params
+    // Perform initial search if there are params, otherwise load all public notes
     if (initialQuery || initialTags) {
       performSearch({
         q: initialQuery,
         tags: initialTags,
       });
+    } else {
+      // Load all public notes initially
+      performSearch({});
     }
   }, [searchParams]);
 
@@ -137,15 +147,22 @@ const Search = () => {
       }
 
       const results = await searchNotes(searchParams);
+      console.log("Search API called with params:", searchParams);
+      console.log("Search results received:", results);
 
       // Handle both old format (array) and new format (pagination object)
       if (Array.isArray(results)) {
+        console.log("Results in array format, count:", results.length);
         setSearchResults(results);
         setTotalResults(results.length);
         setTotalPages(1);
         setHasNext(false);
         setHasPrev(false);
       } else {
+        console.log(
+          "Results in pagination format, items count:",
+          results.items?.length || 0
+        );
         setSearchResults(results.items || []);
         setTotalResults(results.total || 0);
         setTotalPages(results.pages || 0);
@@ -155,6 +172,12 @@ const Search = () => {
     } catch (error) {
       setError("Failed to search notes");
       console.error("Error searching notes:", error);
+      // Set empty results as fallback
+      setSearchResults([]);
+      setTotalResults(0);
+      setTotalPages(0);
+      setHasNext(false);
+      setHasPrev(false);
     } finally {
       setLoading(false);
     }
@@ -264,8 +287,6 @@ const Search = () => {
           return 0;
       }
     });
-
-    setFilteredNotes(filtered);
   };
 
   const handleLogout = () => {
@@ -274,10 +295,17 @@ const Search = () => {
     setIsMenuOpen(false);
   };
 
+  // Handle clicking on username to view profile
+  const handleUsernameClick = (username) => {
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
+  };
+
   // File download handler
   const handleFileDownload = async (noteId, filename) => {
     try {
-      await triggerFileDownload(noteId, filename);
+      await triggerFileDownload(noteId, "original");
     } catch (error) {
       console.error("Download failed:", error);
       alert("Download failed. Please try again.");
@@ -287,7 +315,7 @@ const Search = () => {
   // Markdown download handler
   const handleMarkdownDownload = async (noteId, filename) => {
     try {
-      await triggerFileDownload(noteId, filename, true); // true for markdown
+      await triggerFileDownload(noteId, "markdown");
     } catch (error) {
       console.error("Markdown download failed:", error);
       alert("Markdown download failed. Please try again.");
@@ -376,7 +404,11 @@ const Search = () => {
               </svg>
             </div>
             <Link
-              to="/"
+              to={
+                isAuthenticated || localStorage.getItem("auth_token")
+                  ? "/dashboard"
+                  : "/"
+              }
               className="text-2xl font-poppins font-bold text-blue-900"
             >
               NoteLens
@@ -539,80 +571,88 @@ const Search = () => {
             isSearchBoxVisible ? "animate-fade-in-slide-up" : ""
           }`}
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Search Input */}
-            <div className="md:col-span-2" role="search">
-              <label className="block text-sm font-medium text-white mb-2">
-                Search
-              </label>
-              <div className="relative">
-                <FontAwesomeIcon
-                  icon={faSearch}
-                  className="absolute left-3 top-4.5 h-5 w-5 text-gray-600"
-                />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by title, description, or username..."
-                  className="w-full px-10 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  aria-label="Search notes"
-                />
+          <form onSubmit={handleSearch}>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              {/* Search Input */}
+              <div className="md:col-span-2" role="search">
+                <label className="block text-sm font-medium text-white mb-2">
+                  Search
+                </label>
+                <div className="relative">
+                  <FontAwesomeIcon
+                    icon={faSearch}
+                    className="absolute left-3 top-4.5 h-5 w-5 text-gray-600"
+                  />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by title, description, or username..."
+                    className="w-full px-10 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    aria-label="Search notes"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearch(e);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Sort By */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  <FontAwesomeIcon icon={faSort} className="mr-1" /> Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                  aria-label="Sort notes"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="title">Title (A-Z)</option>
+                </select>
+              </div>
+
+              {/* Filter By */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  <FontAwesomeIcon icon={faFilter} className="mr-1" /> Filter By
+                </label>
+                <select
+                  value={filterBy}
+                  onChange={(e) => setFilterBy(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                  aria-label="Filter notes"
+                >
+                  <option value="all">All Notes</option>
+                  <option value="public">Public Only</option>
+                  <option value="private">Private Only</option>
+                </select>
               </div>
             </div>
-
-            {/* Sort By */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                <FontAwesomeIcon icon={faSort} className="mr-1" /> Sort By
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-                aria-label="Sort notes"
+            {/* Filter Actions */}
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-blue-700">
+              <div className="text-sm text-gray-200">
+                Showing {searchResults.length} of {totalResults} notes
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 ml-4"
+                aria-label="Search notes"
               >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="title">Title (A-Z)</option>
-              </select>
+                <FontAwesomeIcon icon={faSearch} />
+                <span>Search</span>
+              </button>
             </div>
-
-            {/* Filter By */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                <FontAwesomeIcon icon={faFilter} className="mr-1" /> Filter By
-              </label>
-              <select
-                value={filterBy}
-                onChange={(e) => setFilterBy(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-                aria-label="Filter notes"
-              >
-                <option value="all">All Notes</option>
-                <option value="public">Public Only</option>
-                <option value="private">Private Only</option>
-              </select>
-            </div>
-          </div>
-          {/* Filter Actions */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-blue-700">
-            <div className="text-sm text-gray-200">
-              Showing {filteredNotes.length} of {allNotes.length} notes
-            </div>
-            <button
-              onClick={() => filterAndSortNotes()}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 ml-4"
-              aria-label="Search notes"
-            >
-              <FontAwesomeIcon icon={faSearch} />
-              <span>Search</span>
-            </button>
-          </div>
+          </form>
         </div>
 
         {/* Results */}
-        {filteredNotes.length === 0 ? (
+        {searchResults.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-gray-400 text-7xl mb-6">
               <FontAwesomeIcon icon={faSearch} />
@@ -637,7 +677,7 @@ const Search = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {filteredNotes.map((note, index) => (
+            {searchResults.map((note, index) => (
               <div
                 key={note.public_id}
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl border border-gray-200 transform transition hover:-translate-y-2 animate-slide-in-card"
@@ -666,7 +706,13 @@ const Search = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-base text-gray-500 mb-5">
-                    <span>By {note.owner?.username}</span>
+                    <button
+                      onClick={() => handleUsernameClick(note.owner?.username)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors cursor-pointer bg-transparent border-none p-0"
+                      title={`View ${note.owner?.username}'s profile`}
+                    >
+                      By {note.owner?.username}
+                    </button>
                     <span>
                       {new Date(note.created_at).toLocaleDateString()}
                     </span>

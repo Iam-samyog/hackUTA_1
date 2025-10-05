@@ -53,7 +53,16 @@ const DebugPanel = () => {
 
         <div>
           <strong>Token:</strong>{" "}
-          {token ? `${token.substring(0, 20)}...` : "No token"}
+          {token ? `${token.substring(0, 20)}...` : "❌ No auth token"}
+        </div>
+
+        <div>
+          <strong>Token Status:</strong>{" "}
+          {token ? (
+            <span className="text-green-400">✅ Present</span>
+          ) : (
+            <span className="text-red-400">❌ Missing</span>
+          )}
         </div>
 
         <div>
@@ -73,6 +82,27 @@ const DebugPanel = () => {
             className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 w-full"
           >
             Log Full Info
+          </button>
+
+          <button
+            onClick={() => {
+              console.log(
+                "LocalStorage auth_token:",
+                localStorage.getItem("auth_token")
+              );
+              console.log("AuthContext user:", user);
+              console.log("AuthContext isAuthenticated:", isAuthenticated);
+              alert(
+                `Token in localStorage: ${
+                  localStorage.getItem("auth_token") ? "YES" : "NO"
+                }\nUser in context: ${user ? "YES" : "NO"}\nAuth status: ${
+                  isAuthenticated ? "AUTHENTICATED" : "NOT AUTHENTICATED"
+                }`
+              );
+            }}
+            className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700 w-full"
+          >
+            Check Auth Status
           </button>
 
           <button

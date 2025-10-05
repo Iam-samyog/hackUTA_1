@@ -41,8 +41,13 @@ const Login = () => {
     try {
       if (isLogin) {
         // Login
+        console.log("Attempting login with:", { email });
         const response = await loginUser({ email, password });
-        await login(response.user || response);
+        console.log("Login response:", response);
+
+        // Pass the full response to the context login function
+        await login(response);
+        console.log("Login context updated, navigating to dashboard...");
         navigate("/dashboard");
       } else {
         // Registration
@@ -52,11 +57,17 @@ const Login = () => {
           password,
           profile_bio: name, // Assuming profile_bio is used for full name
         };
+        console.log("Attempting registration with:", { username, email });
         const response = await registerUser(userData);
-        await login(response.user || response);
+        console.log("Registration response:", response);
+
+        // Pass the full response to the context login function
+        await login(response);
+        console.log("Registration successful, navigating to dashboard...");
         navigate("/dashboard");
       }
     } catch (error) {
+      console.error("Login/Registration error:", error);
       setError(error.message || "An error occurred. Please try again.");
     } finally {
       setLoading(false);

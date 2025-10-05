@@ -15,6 +15,21 @@ export const getPublicNotes = async (page = 1, perPage = 10) => {
   }
 };
 
+// Get current user's notes
+export const getUserNotes = async (page = 1, perPage = 10) => {
+  try {
+    const response = await apiRequest(
+      `/users/me/notes?page=${page}&per_page=${perPage}`,
+      {
+        method: "GET",
+      }
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Get a specific note by public_id (automatically increments view count)
 export const getNoteById = async (publicId) => {
   try {
@@ -199,17 +214,55 @@ export const getOCRStatus = async (publicId) => {
 };
 
 // Utility function to trigger file download
-export const triggerFileDownload = (publicId, fileType = "original") => {
-  const url =
-    fileType === "markdown"
-      ? `/api/notes/${publicId}/download/markdown`
-      : `/api/notes/${publicId}/download/original`;
+export const triggerFileDownload = async (publicId, fileType = "original") => {
+  try {
+    const token = localStorage.getItem("auth_token");
+    const baseUrl = "http://localhost:5000/api";
+    const url =
+      fileType === "markdown"
+        ? `${baseUrl}/notes/${publicId}/download/markdown`
+        : `${baseUrl}/notes/${publicId}/download/original`;
 
-  // Create a temporary link element and trigger download
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = ""; // Let the server determine filename
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    // Use fetch with proper auth headers
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Download failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    // Get the blob and create download link
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    // Get filename from response headers if available
+    const contentDisposition = response.headers.get("content-disposition");
+    let filename = `note_${publicId}.pdf`;
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]*)"?/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    // Create a temporary link element and trigger download
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the blob URL
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error("File download error:", error);
+    throw error;
+  }
 };

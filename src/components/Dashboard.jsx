@@ -79,7 +79,12 @@ const Dashboard = () => {
     fetchNotes();
     fetchPopularTags();
     if (user) {
-      fetchRecommendedNotes();
+      fetchRecommendedNotes().catch((error) => {
+        console.warn(
+          "Failed to fetch recommended notes, continuing without recommendations:",
+          error
+        );
+      });
     }
   }, [currentPage, perPage, activeTab, user]);
 
@@ -131,6 +136,8 @@ const Dashboard = () => {
       setRecommendedNotes(recommended.items || []);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
+      // Set empty array as fallback to prevent UI errors
+      setRecommendedNotes([]);
     }
   };
 
@@ -222,6 +229,13 @@ const Dashboard = () => {
     setSelectedFileName(selectedFile.name);
   };
 
+  // Handle clicking on username to view profile
+  const handleUsernameClick = (username) => {
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
+  };
+
   const handleViewFile = (note) => {
     setCurrentFile({
       url: `/api/notes/${note.public_id}/file`,
@@ -233,7 +247,7 @@ const Dashboard = () => {
   // File download handler
   const handleFileDownload = async (noteId, filename) => {
     try {
-      await triggerFileDownload(noteId, filename);
+      await triggerFileDownload(noteId, "original");
     } catch (error) {
       console.error("Download failed:", error);
       alert("Download failed. Please try again.");
@@ -243,7 +257,7 @@ const Dashboard = () => {
   // Markdown download handler
   const handleMarkdownDownload = async (noteId, filename) => {
     try {
-      await triggerFileDownload(noteId, filename, true); // true for markdown
+      await triggerFileDownload(noteId, "markdown");
     } catch (error) {
       console.error("Markdown download failed:", error);
       alert("Markdown download failed. Please try again.");
@@ -562,7 +576,13 @@ const Dashboard = () => {
                   </p>
 
                   <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>By {note.owner?.username}</span>
+                    <button
+                      onClick={() => handleUsernameClick(note.owner?.username)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors cursor-pointer bg-transparent border-none p-0"
+                      title={`View ${note.owner?.username}'s profile`}
+                    >
+                      By {note.owner?.username}
+                    </button>
                     <span>
                       {new Date(note.created_at).toLocaleDateString()}
                     </span>

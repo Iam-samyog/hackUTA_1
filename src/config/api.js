@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = "http://localhost:5000/api"; // Update this to your actual backend URL
+const API_BASE_URL = "/api"; // Use proxy instead of direct URL
 
 // Helper function to get auth token from localStorage
 const getAuthToken = () => {
@@ -31,6 +31,8 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 
   const config = {
+    mode: "cors", // Explicitly set CORS mode
+    credentials: "omit", // Don't send credentials to avoid CORS issues
     headers: defaultHeaders,
     ...options,
     headers: {
@@ -45,7 +47,21 @@ const apiRequest = async (endpoint, options = {}) => {
       headers: config.headers,
     });
 
-    const response = await fetch(url, config);
+    // Add detailed fetch debugging
+    console.log("About to call fetch with config:", config);
+
+    const response = await fetch(url, config).catch((fetchError) => {
+      console.error("Fetch failed:", {
+        error: fetchError,
+        message: fetchError.message,
+        stack: fetchError.stack,
+        url: url,
+        config: config,
+      });
+      throw fetchError;
+    });
+
+    console.log("Fetch successful, processing response...");
 
     // Handle non-JSON responses for file uploads
     const contentType = response.headers.get("content-type");
@@ -64,8 +80,26 @@ const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       const errorMessage =
-        data.message || data || `HTTP error! status: ${response.status}`;
-      console.error(`API Error for ${endpoint}:`, errorMessage);
+        data.message ||
+        data.msg ||
+        data.error ||
+        data ||
+        `HTTP error! status: ${response.status}`;
+
+      // Special handling for authorization errors
+      if (response.status === 401) {
+        console.warn("Unauthorized request - token may be invalid or expired");
+        // Remove invalid token
+        removeAuthToken();
+      }
+
+      console.error(`API Error for ${endpoint}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorMessage,
+        url: url,
+      });
+
       throw new Error(errorMessage);
     }
 
