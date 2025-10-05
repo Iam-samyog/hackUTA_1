@@ -512,7 +512,7 @@ const Dashboard = () => {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-700 text-white w-[600px] h-[300px] rounded-full shadow-2xl hover:bg-blue-800 transition-all font-poppins font-extrabold text-6xl tracking-widest border-4 border-blue-900 flex items-center justify-center mx-auto"
+              className="bg-blue-200 text-blue-900 w-[600px] h-[300px] rounded-full shadow-2xl hover:bg-blue-300 transition-all font-poppins font-extrabold text-6xl tracking-widest border-4 border-blue-300 flex items-center justify-center mx-auto"
             >
               <i className="fas fa-plus mr-12 text-6xl"></i>
               Create Your First Note
@@ -523,10 +523,10 @@ const Dashboard = () => {
             {notes.map((note) => (
               <div
                 key={note.public_id}
-                className="bg-gradient-to-br from-blue-900 to-blue-800 shadow-2xl border border-blue-950 transform transition hover:scale-[1.02] card-glow relative overflow-hidden rounded-xl w-[340px] h-auto mx-auto"
+                className="bg-gray-400  border  transform transition hover:scale-[1.02] card-glow relative overflow-hidden rounded-xl w-[340px]  mx-auto"
               >
-                <div className="p-0">
-                  <div className="relative h-32 w-full flex items-center justify-center bg-blue-950">
+                <div className="p-0 border border-[5px] border-blue-500">
+                  <div className="relative h-32 w-full flex  items-center justify-center bg-gray-100">
                     <div className="absolute top-3 right-3 z-20">
                       {user?.username === note.owner?.username && (
                         <button
@@ -539,26 +539,20 @@ const Dashboard = () => {
                         </button>
                       )}
                     </div>
-                    <div className="flex flex-col items-center justify-center w-full px-6">
-                      <h3 className="text-xl font-poppins font-bold text-white drop-shadow-lg mb-1 text-center line-clamp-2">
+                    <div className="flex flex-col items-center  justify-center w-full px-6">
+                      <h3 className="text-xl font-poppins font-bold text-black drop-shadow-lg mb-1 text-center line-clamp-2">
                         {note.title}
                       </h3>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
-                          note.is_public
-                            ? "bg-blue-800 text-blue-200"
-                            : "bg-gray-700 text-gray-300"
-                        }`}
-                      >
-                        {note.is_public ? "Public" : "Private"}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold mt-1 ${note.is_public ? 'bg-blue-800 text-blue-200' : 'bg-gray-700 text-gray-300'}`}>
+                        {note.is_public ? 'Public' : 'Private'}
                       </span>
                     </div>
                   </div>
-                  <div className="px-6 py-5 flex flex-col gap-3 bg-blue-900/90">
+                  <div className="px-6 py-5 flex flex-col gap-3 bg-[#6E8FE2]">
                     <p className="text-blue-200 mb-2 line-clamp-2 text-sm text-center font-inter">
                       {note.description}
                     </p>
-                    <div className="flex items-center justify-center gap-4 text-xs text-blue-300 mb-2">
+                    <div className="flex items-center justify-center gap-4 text-xs text-white mb-2">
                       <button
                         onClick={() =>
                           handleUsernameClick(note.owner?.username)
@@ -579,13 +573,13 @@ const Dashboard = () => {
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <Link
                         to={`/note/${note.public_id}`}
-                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-white text-black hover:text-white rounded-lg hover:bg-blue-500 hover:border-b transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                       >
                         <i className="fas fa-eye mr-1"></i> Details
                       </Link>
                       <button
                         onClick={() => handleViewFile(note)}
-                        className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-white text-black hover:text-white rounded-lg hover:bg-blue-500 hover:border-b transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                         aria-label="View file"
                       >
                         <i className="fas fa-file-pdf mr-1"></i> View PDF
@@ -593,29 +587,19 @@ const Dashboard = () => {
                       <button
                         onClick={() => handleViewMarkdown(note)}
                         className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
-                        title="View Markdown"
+                        title="View AI-generated markdown"
                       >
                         <i className="fas fa-file-markdown mr-1"></i>
                         Markdown
                       </button>
                       <button
-                        onClick={() =>
-                          handleFileDownload(
-                            note.public_id,
-                            `${note.title}.pdf`
-                          )
-                        }
+                        onClick={() => handleFileDownload(note.public_id, `${note.title}.pdf`)}
                         className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs"
                       >
                         <i className="fas fa-download mr-1"></i> PDF
                       </button>
                       <button
-                        onClick={() =>
-                          handleMarkdownDownload(
-                            note.public_id,
-                            `${note.title}.md`
-                          )
-                        }
+                        onClick={() => handleMarkdownDownload(note.public_id, `${note.title}.md`)}
                         className="inline-flex items-center justify-center px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors font-poppins font-semibold shadow-md hover:shadow-lg text-xs col-span-2"
                       >
                         <i className="fas fa-download mr-1"></i>
@@ -624,7 +608,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </div>
-                <div className="absolute left-0 bottom-0 w-full h-2 bg-blue-950 rounded-b-xl"></div>
+               
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { searchNotes } from "../services/searchService.js";
 import { getPopularTags } from "../services/tagsService.js";
 import { toggleBookmark } from "../services/bookmarksService.js";
+import NavbarNew from "./NavbarNew.jsx";
 import {
   triggerFileDownload,
   getMarkdownContent,
@@ -54,9 +55,11 @@ const Search = () => {
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // still used for sidebar
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isSearchBoxVisible, setIsSearchBoxVisible] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDebugger, setShowDebugger] = useState(false);
 
   // Search form state
   const [searchQuery, setSearchQuery] = useState("");
@@ -383,89 +386,14 @@ const Search = () => {
         }
       `}</style>
 
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2 bg-white/80">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </div>
-            <Link
-              to={
-                isAuthenticated || localStorage.getItem("auth_token")
-                  ? "/dashboard"
-                  : "/"
-              }
-              className="text-2xl font-poppins font-bold text-blue-900"
-            >
-              NoteLens
-            </Link>
-          </div>
-
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/profile"
-              className="text-black hover:text-blue-600 font-poppins font-semibold transition-colors"
-            >
-              Profile
-            </Link>
-            <Link
-              to="/courses"
-              className="text-black hover:text-blue-600 font-poppins font-semibold transition-colors"
-            >
-              Courses
-            </Link>
-            <Link
-              to="/search"
-              className="text-blue-600 font-poppins font-semibold"
-            >
-              Search
-            </Link>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors font-poppins font-semibold"
-            >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" /> Create Course
-            </button>
-            <button
-              onClick={() => setShowDebugger(!showDebugger)}
-              className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors font-poppins font-semibold"
-            >
-              Debug API
-            </button>
-            <span className="text-gray-600 text-sm">
-              Welcome, {user?.username || "User"}!
-            </span>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors font-poppins font-semibold"
-            >
-              <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" /> Logout
-            </button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button onClick={toggleMenu}>
-              <FontAwesomeIcon icon={faBars} size="lg" className="text-black" />
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* NavbarNew Replacement */}
+      <NavbarNew
+        user={user}
+        logout={logout}
+        setShowCreateModal={setShowCreateModal}
+        showDebugger={showDebugger}
+        setShowDebugger={setShowDebugger}
+      />
 
       {/* Mobile Sidebar */}
       <div

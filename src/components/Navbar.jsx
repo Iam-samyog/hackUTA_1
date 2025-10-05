@@ -59,7 +59,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2 bg-white/70">
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 pt-1 bg-white/70 mb-7">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo with Smart Redirect */}
           <Link
@@ -69,7 +69,7 @@ const Navbar = () => {
             <img
               src="/Logo.svg"
               alt="NoteLens Logo"
-              className="h-12 w-auto"
+              className="h-auto w-[80px]"
             />
           </Link>
 
