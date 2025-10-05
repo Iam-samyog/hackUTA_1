@@ -286,11 +286,13 @@ const NoteLensHomepage = () => {
                         </p>
 
                         <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 ${isVisible.hero ? 'animate-hero-cta' : 'opacity-0'}`}>
+                            <Link to="/login" >  
                             <button className="px-8 py-4 bg-blue-600 text-white rounded-xl font-poppins font-semibold text-lg hover:bg-blue-700 transition-all hover:scale-105 hover:shadow-2xl">
                                 Start Creating Notes
                             </button>
+                            </Link>
                             <button className="px-12 py-4 border-2 border-blue-600 text-blue-600 rounded-xl font-poppins font-semibold text-lg hover:bg-blue-50 transition-all hover:scale-105">
-                                <Link to="/login" >  Sign In</Link>
+                                <Link to="/login" >Register</Link>
                                 
                             </button>
                         </div>
