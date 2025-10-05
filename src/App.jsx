@@ -15,6 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DebugPanel from "./components/DebugPanel";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
+import About from "./components/About.jsx";
 // Home component that redirects based on auth status
 const Home = () => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -70,6 +71,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/notedetail" element={<NoteDetail />} />
+          <Route path="/about" element={<About/>}></Route>
         </Routes>
 
         {/* Debug Panel - only shows in development */}
