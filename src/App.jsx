@@ -24,6 +24,7 @@ function App() {
           <Route path="/courses" element={<Courses />} />
           <Route path="/search" element={<Search />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/notedetail" element={<NoteDetail />} />
         </Routes>
 
         {/* Debug Panel - only shows in development */}
