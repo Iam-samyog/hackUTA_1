@@ -8,6 +8,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import FileUpload from "./FileUpload.jsx";
 import FileViewer from "./FileViewer.jsx";
+import CORSDebugger from "./CORSDebugger.jsx";
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -26,6 +27,9 @@ const Dashboard = () => {
   // File viewer state
   const [showFileViewer, setShowFileViewer] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
+
+  // Debug state
+  const [showDebugger, setShowDebugger] = useState(false);
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -168,6 +172,12 @@ const Dashboard = () => {
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Create Note
+              </button>
+              <button
+                onClick={() => setShowDebugger(!showDebugger)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Debug API
               </button>
               <button
                 onClick={handleLogout}
@@ -433,6 +443,26 @@ const Dashboard = () => {
           fileName={currentFile.name}
           onClose={() => setShowFileViewer(false)}
         />
+      )}
+
+      {/* CORS Debugger */}
+      {showDebugger && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold">API Debugger</h2>
+              <button
+                onClick={() => setShowDebugger(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4">
+              <CORSDebugger />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import NoteDetail from "./components/NoteDetail";
 import Courses from "./components/Courses";
 import Search from "./components/Search";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DebugPanel from "./components/DebugPanel";
 import { AuthProvider } from "./context/AuthContext.jsx";
 
 function App() {
@@ -59,6 +60,9 @@ function App() {
             }
           />
         </Routes>
+
+        {/* Debug Panel - only shows in development */}
+        {process.env.NODE_ENV === "development" && <DebugPanel />}
       </Router>
     </AuthProvider>
   );

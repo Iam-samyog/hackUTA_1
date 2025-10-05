@@ -40,6 +40,11 @@ const apiRequest = async (endpoint, options = {}) => {
   };
 
   try {
+    console.log(`Making API request to: ${url}`, {
+      method: config.method || "GET",
+      headers: config.headers,
+    });
+
     const response = await fetch(url, config);
 
     // Handle non-JSON responses for file uploads
@@ -52,15 +57,21 @@ const apiRequest = async (endpoint, options = {}) => {
       data = await response.text();
     }
 
+    console.log(`API Response for ${endpoint}:`, {
+      status: response.status,
+      data,
+    });
+
     if (!response.ok) {
-      throw new Error(
-        data.message || data || `HTTP error! status: ${response.status}`
-      );
+      const errorMessage =
+        data.message || data || `HTTP error! status: ${response.status}`;
+      console.error(`API Error for ${endpoint}:`, errorMessage);
+      throw new Error(errorMessage);
     }
 
     return data;
   } catch (error) {
-    console.error("API Request Error:", error);
+    console.error("API Request Error:", { url, error: error.message, config });
     throw error;
   }
 };
