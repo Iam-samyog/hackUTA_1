@@ -5,15 +5,29 @@ import {
   createNote,
   deleteNote,
 } from "../services/notesService.js";
+import { getPopularTags } from "../services/tagsService.js";
+import { toggleBookmark } from "../services/bookmarksService.js";
+import { getRecommendedNotes } from "../services/searchService.js";
 import { Link, useNavigate } from "react-router-dom";
 import FileUpload from "./FileUpload.jsx";
 import FileViewer from "./FileViewer.jsx";
 import CORSDebugger from "./CORSDebugger.jsx";
+import Pagination from "./Pagination.jsx";
+import { TagList, TagInput } from "./TagComponents.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faTimes, faHeart, faEye, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 const Dashboard = () => {
+  // Notes and pagination state
   const [notes, setNotes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalNotes, setTotalNotes] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
+  
+  // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -26,6 +40,13 @@ const Dashboard = () => {
   const [isPublic, setIsPublic] = useState(true);
   const [file, setFile] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  // New features state
+  const [popularTags, setPopularTags] = useState([]);
+  const [recommendedNotes, setRecommendedNotes] = useState([]);
+  const [bookmarkedNotes, setBookmarkedNotes] = useState(new Set());
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'recommended'
 
   // File viewer state
   const [showFileViewer, setShowFileViewer] = useState(false);
@@ -39,19 +60,91 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchNotes();
-  }, []);
+    fetchPopularTags();
+    if (user) {
+      fetchRecommendedNotes();
+    }
+  }, [currentPage, perPage, activeTab, user]);
 
   const fetchNotes = async () => {
     try {
       setLoading(true);
-      const notesData = await getPublicNotes();
-      setNotes(notesData);
+      let notesData;
+      
+      if (activeTab === 'recommended' && user) {
+        notesData = await getRecommendedNotes(currentPage, perPage);
+      } else {
+        notesData = await getPublicNotes(currentPage, perPage);
+      }
+      
+      // Handle both old format (array) and new format (pagination object)
+      if (Array.isArray(notesData)) {
+        setNotes(notesData);
+        setTotalNotes(notesData.length);
+        setTotalPages(1);
+        setHasNext(false);
+        setHasPrev(false);
+      } else {
+        setNotes(notesData.items || []);
+        setTotalNotes(notesData.total || 0);
+        setTotalPages(notesData.pages || 0);
+        setHasNext(notesData.has_next || false);
+        setHasPrev(notesData.has_prev || false);
+      }
     } catch (error) {
       setError("Failed to fetch notes");
       console.error("Error fetching notes:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPopularTags = async () => {
+    try {
+      const tags = await getPopularTags(10);
+      setPopularTags(tags);
+    } catch (error) {
+      console.error("Error fetching popular tags:", error);
+    }
+  };
+
+  const fetchRecommendedNotes = async () => {
+    try {
+      const recommended = await getRecommendedNotes(1, 6);
+      setRecommendedNotes(recommended.items || []);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+    }
+  };
+
+  const handleBookmarkToggle = async (notePublicId) => {
+    try {
+      await toggleBookmark(notePublicId);
+      // Update local state
+      const newBookmarked = new Set(bookmarkedNotes);
+      if (newBookmarked.has(notePublicId)) {
+        newBookmarked.delete(notePublicId);
+      } else {
+        newBookmarked.add(notePublicId);
+      }
+      setBookmarkedNotes(newBookmarked);
+    } catch (error) {
+      console.error("Error toggling bookmark:", error);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePerPageChange = (newPerPage) => {
+    setPerPage(newPerPage);
+    setCurrentPage(1); // Reset to first page
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1); // Reset to first page
   };
 
   const handleCreateNote = async (e) => {
@@ -65,6 +158,7 @@ const Dashboard = () => {
         description,
         is_public: isPublic,
         file,
+        tags: selectedTags, // Include tags in note creation
       };
 
       await createNote(noteData);
@@ -75,6 +169,7 @@ const Dashboard = () => {
       setIsPublic(true);
       setFile(null);
       setSelectedFileName("");
+      setSelectedTags([]);
       setShowCreateModal(false);
 
       // Refresh notes list

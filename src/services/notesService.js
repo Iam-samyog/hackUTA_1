@@ -1,9 +1,9 @@
 import { apiRequest, apiFormRequest } from "../config/api.js";
 
-// Get all public notes
-export const getPublicNotes = async () => {
+// Get all public notes with pagination
+export const getPublicNotes = async (page = 1, perPage = 10) => {
   try {
-    const response = await apiRequest("/notes", {
+    const response = await apiRequest(`/notes?page=${page}&per_page=${perPage}`, {
       method: "GET",
     });
     return response;
@@ -12,7 +12,7 @@ export const getPublicNotes = async () => {
   }
 };
 
-// Get a specific note by public_id
+// Get a specific note by public_id (automatically increments view count)
 export const getNoteById = async (publicId) => {
   try {
     const response = await apiRequest(`/notes/${publicId}`, {
@@ -134,6 +134,30 @@ export const toggleReaction = async (publicId, reactionType) => {
 export const getNoteReactions = async (publicId) => {
   try {
     const response = await apiRequest(`/notes/${publicId}/react`, {
+      method: "GET",
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Download original file (increments download count)
+export const downloadOriginalFile = async (publicId) => {
+  try {
+    const response = await apiRequest(`/notes/${publicId}/download/original`, {
+      method: "GET",
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Download markdown file (increments download count)
+export const downloadMarkdownFile = async (publicId) => {
+  try {
+    const response = await apiRequest(`/notes/${publicId}/download/markdown`, {
       method: "GET",
     });
     return response;
