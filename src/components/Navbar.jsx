@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,7 +10,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-blue-500 text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2">
+      <nav className=" text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -34,19 +35,21 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             <a
               href="#features"
-              className="text-gray-200 hover:text-white hover:border-b-3 transition-colors font-semibold"
+              className="text-black hover:text-black hover:border-b-3 transition-colors font-semibold"
             >
               Features
             </a>
             <a
               href="#how-it-works"
-              className="text-gray-200 hover:text-white transition-colors font-semibold hover:border-b-3"
+              className="text-black hover:semi-bold transition-colors font-semibold hover:border-b-3"
             >
               How it Works
             </a>
+            <Link to="/login" >
             <button className="px-6 py-2 bg-blue-800 font-bold text-white rounded-lg hover:bg-white hover:text-black hover:border-black transition-all hover:scale-105 hover:border-b-3">
               Get Started
             </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -77,6 +80,7 @@ const Navbar = () => {
           <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 font-semibold">
             How it Works
           </a>
+
           <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
             Get Started
           </button>
