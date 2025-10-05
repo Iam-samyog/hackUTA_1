@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDownload, faTimes } from "@fortawesome/free-solid-svg-icons";
 
 const FileViewer = ({ fileUrl, fileName, onClose }) => {
   const [loading, setLoading] = useState(true);
@@ -37,19 +39,7 @@ const FileViewer = ({ fileUrl, fileName, onClose }) => {
               onClick={handleDownload}
               className="flex items-center space-x-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faDownload} className="w-4 h-4" />
               <span>Download</span>
             </button>
           </div>
@@ -58,19 +48,7 @@ const FileViewer = ({ fileUrl, fileName, onClose }) => {
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faTimes} className="w-6 h-6" />
           </button>
         </div>
 

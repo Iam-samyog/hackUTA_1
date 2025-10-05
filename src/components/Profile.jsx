@@ -20,14 +20,9 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showSizeAlert, setShowSizeAlert] = useState(false);
-  const [showWebcamModal, setShowWebcamModal] = useState(false);
-  const [webcamStream, setWebcamStream] = useState(null);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const cameraInputRef = useRef(null);
 
-  // Device detection
-  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  // Ref for camera input
+  const cameraInputRef = useRef(null);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -71,52 +66,8 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
   };
 
   const handleCameraButtonClick = () => {
-    if (isMobile) {
-      if (cameraInputRef.current) cameraInputRef.current.click();
-    } else {
-      // Desktop: open webcam modal
-      setShowWebcamModal(true);
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => {
-          setWebcamStream(stream);
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch(() => {
-          alert('Unable to access webcam.');
-        });
-    }
-  };
-
-  const handleWebcamCapture = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video && canvas) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], 'webcam.jpg', { type: 'image/jpeg' });
-          setSelectedFile(file);
-          onFileSelect(file);
-          setShowWebcamModal(false);
-          if (webcamStream) {
-            webcamStream.getTracks().forEach(track => track.stop());
-            setWebcamStream(null);
-          }
-        }
-      }, 'image/jpeg');
-    }
-  };
-
-  const handleWebcamModalClose = () => {
-    setShowWebcamModal(false);
-    if (webcamStream) {
-      webcamStream.getTracks().forEach(track => track.stop());
-      setWebcamStream(null);
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
     }
   };
 
@@ -173,7 +124,7 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
           <input
             type="file"
             accept="image/*"
-            capture="environment"
+            capture="camera"
             className="hidden"
             ref={cameraInputRef}
             onChange={handleCameraCapture}
@@ -210,19 +161,6 @@ const FileUpload = ({ onFileSelect, accept, maxSize }) => {
             </div>
           </div>
         </>
-      )}
-      {/* Webcam Modal for Desktop */}
-      {showWebcamModal && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 shadow-lg flex flex-col items-center">
-            <video ref={videoRef} autoPlay playsInline className="w-80 h-60 bg-black rounded" />
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-            <div className="mt-4 flex gap-4">
-              <button onClick={handleWebcamCapture} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">Capture</button>
-              <button onClick={handleWebcamModalClose} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 font-semibold">Cancel</button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
@@ -382,7 +320,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white mt-10">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
