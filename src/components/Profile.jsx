@@ -11,28 +11,26 @@ import {
   Home,
   MessageCircle,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext.jsx";
+// import { useAuth } from "../context/AuthContext.jsx"; // Commented out for static version
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const Profile = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Commented out for static version
   const [activeNoteIndex, setActiveNoteIndex] = useState(0);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [likedNotes, setLikedNotes] = useState({});
 
-  // Use real user data from auth context
+  // Static user data (backend logic commented out)
   const userData = {
-    name: user?.username || "User",
-    username: `@${user?.username || "user"}`,
+    name: "Sarah Johnson",
+    username: "@sarahjohnson",
     profilePicture:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-    followers: 0, // TODO: Connect to backend
-    following: 0, // TODO: Connect to backend
-    totalPosts: 0, // TODO: Connect to backend
-    bio: `Welcome to NoteLens! I'm ${
-      user?.username || "User"
-    } and I love sharing study notes.`,
+    followers: 1234,
+    following: 567,
+    totalPosts: 89,
+    bio: "Medical student 📚 | Research enthusiast | Sharing study notes and insights",
   };
 
   // Sample notes data
@@ -143,14 +141,14 @@ const Profile = () => {
     }));
   };
 
-  // Show loading if no user data
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  // Show loading if no user data (commented out for static version)
+  // if (!user) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-white">

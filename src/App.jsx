@@ -53,11 +53,7 @@ function App() {
           />
           <Route
             path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
+            element={<Profile />}
           />
         </Routes>
 
