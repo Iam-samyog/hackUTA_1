@@ -1,17 +1,30 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faTimes, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Toggle mobile menu
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  // Smooth scroll to section and close menu if mobile
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+      setIsMenuOpen(false);
+    }
+  };
 
   return (
     <>
-      <nav className=" text-white fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2">
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 py-2 bg-white/70">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          
+          {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <svg
@@ -31,31 +44,45 @@ const Navbar = () => {
             <span className="text-xl font-poppins font-bold text-blue-900">NoteLens</span>
           </div>
 
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <a
-              href="#features"
-              className="text-black hover:text-black hover:border-b-3 transition-colors font-semibold"
+          {/* Desktop Links + Search + Button */}
+          <div className="hidden md:flex items-center space-x-6">
+            <button
+              onClick={() => scrollToSection('features')}
+              className="text-black hover:text-blue-600 font-semibold transition-colors"
             >
               Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-black hover:semi-bold transition-colors font-semibold hover:border-b-3"
+            </button>
+            <button
+              onClick={() => scrollToSection('how-it-works')}
+              className="text-black hover:text-blue-600 font-semibold transition-colors"
             >
               How it Works
-            </a>
-            <Link to="/login" >
-            <button className="px-6 py-2 bg-blue-800 font-bold text-white rounded-lg hover:bg-white hover:text-black hover:border-black transition-all hover:scale-105 hover:border-b-3">
-              Get Started
             </button>
+
+            {/* Search Bar */}
+            <div className="flex items-center bg-white rounded-lg px-4 py-2 border border-gray-400">
+              <FontAwesomeIcon icon={faSearch} className="text-gray-400 mr-2" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="outline-none text-gray-700 bg-transparent w-40"
+              />
+            </div>
+
+            {/* Get Started Button */}
+            <Link to="/login">
+              <button className="px-6 py-2 bg-blue-800 font-bold text-white rounded-lg hover:bg-blue-600 hover:text-white hover:border-black transition-all hover:scale-105">
+                Get Started
+              </button>
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button onClick={toggleMenu}>
-              <FontAwesomeIcon icon={faBars} size="lg" />
+              <FontAwesomeIcon icon={faBars} size="lg" className="text-black" />
             </button>
           </div>
         </div>
@@ -70,20 +97,41 @@ const Navbar = () => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <span className="text-xl font-poppins font-bold text-blue-900">NoteLens</span>
           <button onClick={toggleMenu}>
-            <FontAwesomeIcon icon={faTimes} size="lg" />
+            <FontAwesomeIcon icon={faTimes} size="lg" className="text-black" />
           </button>
         </div>
-        <div className="flex flex-col mt-6 space-y-4 px-6">
-          <a href="#features" className="text-gray-700 hover:text-blue-600 font-semibold">
-            Features
-          </a>
-          <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 font-semibold">
-            How it Works
-          </a>
 
-          <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
-            Get Started
+        {/* Mobile Search Bar */}
+        <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 mx-6 mt-4">
+          <FontAwesomeIcon icon={faSearch} className="text-gray-400 mr-2" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="outline-none bg-transparent text-gray-700 w-full"
+          />
+        </div>
+
+        {/* Mobile Links */}
+        <div className="flex flex-col mt-6 space-y-4 px-6">
+          <button
+            onClick={() => scrollToSection('features')}
+            className="text-gray-700 hover:text-blue-600 font-semibold text-left"
+          >
+            Features
           </button>
+          <button
+            onClick={() => scrollToSection('how-it-works')}
+            className="text-gray-700 hover:text-blue-600 font-semibold text-left"
+          >
+            How it Works
+          </button>
+          <Link to="/login">
+            <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
+              Get Started
+            </button>
+          </Link>
         </div>
       </div>
 
