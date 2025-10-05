@@ -3,9 +3,12 @@ import { apiRequest, apiFormRequest } from "../config/api.js";
 // Get all public notes with pagination
 export const getPublicNotes = async (page = 1, perPage = 10) => {
   try {
-    const response = await apiRequest(`/notes?page=${page}&per_page=${perPage}`, {
-      method: "GET",
-    });
+    const response = await apiRequest(
+      `/notes?page=${page}&per_page=${perPage}`,
+      {
+        method: "GET",
+      }
+    );
     return response;
   } catch (error) {
     throw error;
@@ -164,4 +167,49 @@ export const downloadMarkdownFile = async (publicId) => {
   } catch (error) {
     throw error;
   }
+};
+
+// Get markdown content for viewing
+export const getMarkdownContent = async (publicId) => {
+  try {
+    const response = await apiRequest(`/notes/${publicId}/markdown`, {
+      method: "GET",
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Check OCR processing status
+export const getOCRStatus = async (publicId) => {
+  try {
+    const response = await apiRequest(`/notes/${publicId}`, {
+      method: "GET",
+    });
+    return {
+      ocr_status: response.ocr_status,
+      has_markdown: response.has_markdown,
+      markdown_generated_at: response.markdown_generated_at,
+      error_message: response.error_message,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Utility function to trigger file download
+export const triggerFileDownload = (publicId, fileType = "original") => {
+  const url =
+    fileType === "markdown"
+      ? `/api/notes/${publicId}/download/markdown`
+      : `/api/notes/${publicId}/download/original`;
+
+  // Create a temporary link element and trigger download
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = ""; // Let the server determine filename
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };

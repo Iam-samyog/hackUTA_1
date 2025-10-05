@@ -1,13 +1,13 @@
-import { apiRequest } from '../config/api.js';
+import { apiRequest } from "../config/api.js";
 
 // Bookmark a note
 export const bookmarkNote = async (notePublicId) => {
   try {
     return await apiRequest(`/notes/${notePublicId}/bookmark`, {
-      method: 'POST',
+      method: "POST",
     });
   } catch (error) {
-    console.error('Error bookmarking note:', error);
+    console.error("Error bookmarking note:", error);
     throw error;
   }
 };
@@ -16,10 +16,10 @@ export const bookmarkNote = async (notePublicId) => {
 export const removeBookmark = async (notePublicId) => {
   try {
     return await apiRequest(`/notes/${notePublicId}/bookmark`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   } catch (error) {
-    console.error('Error removing bookmark:', error);
+    console.error("Error removing bookmark:", error);
     throw error;
   }
 };
@@ -27,9 +27,11 @@ export const removeBookmark = async (notePublicId) => {
 // Get user's bookmarked notes
 export const getUserBookmarks = async (page = 1, perPage = 10) => {
   try {
-    return await apiRequest(`/users/me/bookmarks?page=${page}&per_page=${perPage}`);
+    return await apiRequest(
+      `/users/me/bookmarks?page=${page}&per_page=${perPage}`
+    );
   } catch (error) {
-    console.error('Error fetching user bookmarks:', error);
+    console.error("Error fetching user bookmarks:", error);
     throw error;
   }
 };
@@ -41,7 +43,7 @@ export const toggleBookmark = async (notePublicId) => {
     return await bookmarkNote(notePublicId);
   } catch (error) {
     // If already bookmarked, remove the bookmark
-    if (error.message.includes('already bookmarked')) {
+    if (error.message.includes("already bookmarked")) {
       return await removeBookmark(notePublicId);
     }
     throw error;

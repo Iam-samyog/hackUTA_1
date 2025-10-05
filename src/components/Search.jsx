@@ -3,13 +3,36 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { searchNotes } from "../services/searchService.js";
 import { getPopularTags } from "../services/tagsService.js";
 import { toggleBookmark } from "../services/bookmarksService.js";
+import {
+  triggerFileDownload,
+  getMarkdownContent,
+  getOCRStatus,
+} from "../services/notesService.js";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Pagination from "./Pagination.jsx";
 import { TagList, TagInput } from "./TagComponents.jsx";
+import {
+  OCRStatusBadge,
+  OCRProgressIndicator,
+  OCRErrorMessage,
+  OCRFeatureHighlight,
+} from "./OCRComponents.jsx";
+import MarkdownViewer from "./MarkdownViewer.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faBars, faTimes, faSearch, faFilter, faTimesCircle, 
-  faHeart, faEye, faDownload, faSignOutAlt 
+import {
+  faBars,
+  faTimes,
+  faSearch,
+  faFilter,
+  faTimesCircle,
+  faHeart,
+  faEye,
+  faDownload,
+  faSignOutAlt,
+  faArrowRight,
+  faFileAlt,
+  faFileText,
+  faFilePdf,
 } from "@fortawesome/free-solid-svg-icons";
 
 const Search = () => {
@@ -43,28 +66,38 @@ const Search = () => {
   const [popularTags, setPopularTags] = useState([]);
   const [bookmarkedNotes, setBookmarkedNotes] = useState(new Set());
 
+  // Markdown viewer state
+  const [showMarkdownViewer, setShowMarkdownViewer] = useState(false);
+  const [currentMarkdownNote, setCurrentMarkdownNote] = useState(null);
+
   useEffect(() => {
     fetchPopularTags();
     // Initialize search from URL params
-    const initialQuery = searchParams.get('q') || '';
-    const initialTags = searchParams.get('tags') || '';
-    
+    const initialQuery = searchParams.get("q") || "";
+    const initialTags = searchParams.get("tags") || "";
+
     if (initialQuery) setSearchQuery(initialQuery);
     if (initialTags) {
-      setSelectedTags(initialTags.split(',').map(tag => ({ name: tag })));
+      setSelectedTags(initialTags.split(",").map((tag) => ({ name: tag })));
     }
-    
+
     // Perform initial search if there are params
     if (initialQuery || initialTags) {
       performSearch({
         q: initialQuery,
-        tags: initialTags
+        tags: initialTags,
       });
     }
   }, [searchParams]);
 
   useEffect(() => {
-    if (searchQuery || selectedTags.length > 0 || courseFilter || ownerFilter || visibilityFilter) {
+    if (
+      searchQuery ||
+      selectedTags.length > 0 ||
+      courseFilter ||
+      ownerFilter ||
+      visibilityFilter
+    ) {
       performSearch();
     }
   }, [currentPage, perPage]);
@@ -86,22 +119,25 @@ const Search = () => {
       const searchParams = {
         page: currentPage,
         per_page: perPage,
-        ...customParams
+        ...customParams,
       };
 
       // Add current form values if not overridden by customParams
       if (!customParams.q && searchQuery) searchParams.q = searchQuery;
       if (!customParams.tags && selectedTags.length > 0) {
-        searchParams.tags = selectedTags.map(tag => tag.name || tag).join(',');
+        searchParams.tags = selectedTags
+          .map((tag) => tag.name || tag)
+          .join(",");
       }
-      if (!customParams.course && courseFilter) searchParams.course = courseFilter;
+      if (!customParams.course && courseFilter)
+        searchParams.course = courseFilter;
       if (!customParams.owner && ownerFilter) searchParams.owner = ownerFilter;
       if (!customParams.is_public && visibilityFilter) {
-        searchParams.is_public = visibilityFilter === 'public';
+        searchParams.is_public = visibilityFilter === "public";
       }
 
       const results = await searchNotes(searchParams);
-      
+
       // Handle both old format (array) and new format (pagination object)
       if (Array.isArray(results)) {
         setSearchResults(results);
@@ -166,7 +202,7 @@ const Search = () => {
 
   const handleTagClick = (tag) => {
     const tagName = tag.name || tag;
-    if (!selectedTags.some(t => (t.name || t) === tagName)) {
+    if (!selectedTags.some((t) => (t.name || t) === tagName)) {
       setSelectedTags([...selectedTags, { name: tagName }]);
       setCurrentPage(1);
       // Trigger search after state updates
@@ -236,6 +272,32 @@ const Search = () => {
     logout();
     navigate("/");
     setIsMenuOpen(false);
+  };
+
+  // File download handler
+  const handleFileDownload = async (noteId, filename) => {
+    try {
+      await triggerFileDownload(noteId, filename);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Download failed. Please try again.");
+    }
+  };
+
+  // Markdown download handler
+  const handleMarkdownDownload = async (noteId, filename) => {
+    try {
+      await triggerFileDownload(noteId, filename, true); // true for markdown
+    } catch (error) {
+      console.error("Markdown download failed:", error);
+      alert("Markdown download failed. Please try again.");
+    }
+  };
+
+  // Open markdown viewer
+  const handleViewMarkdown = (note) => {
+    setCurrentMarkdownNote(note);
+    setShowMarkdownViewer(true);
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -313,7 +375,10 @@ const Search = () => {
                 />
               </svg>
             </div>
-            <Link to="/" className="text-2xl font-poppins font-bold text-blue-900">
+            <Link
+              to="/"
+              className="text-2xl font-poppins font-bold text-blue-900"
+            >
               NoteLens
             </Link>
           </div>
@@ -338,7 +403,7 @@ const Search = () => {
             >
               Search
             </Link>
-        <button
+            <button
               onClick={() => setShowCreateModal(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors font-poppins font-semibold"
             >
@@ -353,7 +418,7 @@ const Search = () => {
             <span className="text-gray-600 text-sm">
               Welcome, {user?.username || "User"}!
             </span>
-           <button
+            <button
               onClick={handleLogout}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors font-poppins font-semibold"
             >
@@ -469,7 +534,11 @@ const Search = () => {
         </div>
 
         {/* Search and Filters */}
-        <div className={`bg-gradient-to-r from-blue-800 to-blue-900 rounded-2xl shadow-xl p-8 mb-12 border border-blue-700 ${isSearchBoxVisible ? 'animate-fade-in-slide-up' : ''}`}>
+        <div
+          className={`bg-gradient-to-r from-blue-800 to-blue-900 rounded-2xl shadow-xl p-8 mb-12 border border-blue-700 ${
+            isSearchBoxVisible ? "animate-fade-in-slide-up" : ""
+          }`}
+        >
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Search Input */}
             <div className="md:col-span-2" role="search">
@@ -603,7 +672,12 @@ const Search = () => {
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center">
+                  {/* OCR Status Display */}
+                  <div className="mb-4">
+                    <OCRStatusBadge noteId={note.public_id} />
+                  </div>
+
+                  <div className="flex justify-between items-center mb-4">
                     <Link
                       to={`/note/${note.public_id}`}
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors font-poppins font-semibold text-lg"
@@ -613,9 +687,64 @@ const Search = () => {
                       <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
                     </Link>
 
+                    <div className="flex items-center space-x-3">
+                      {/* Markdown View Button */}
+                      <button
+                        onClick={() => handleViewMarkdown(note)}
+                        className="inline-flex items-center text-purple-600 hover:text-purple-700 transition-colors font-poppins font-semibold"
+                        title="View AI-generated markdown"
+                      >
+                        <FontAwesomeIcon icon={faFileText} className="mr-1" />
+                        Markdown
+                      </button>
+
+                      {/* Download Options */}
+                      <div className="relative group">
+                        <button className="inline-flex items-center text-gray-600 hover:text-gray-700 transition-colors font-poppins font-semibold">
+                          <FontAwesomeIcon icon={faDownload} className="mr-1" />
+                          Download
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block z-10">
+                          <button
+                            onClick={() =>
+                              handleFileDownload(
+                                note.public_id,
+                                `${note.title}.pdf`
+                              )
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <FontAwesomeIcon
+                              icon={faFilePdf}
+                              className="mr-2"
+                            />
+                            Original File
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMarkdownDownload(
+                                note.public_id,
+                                `${note.title}.md`
+                              )
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <FontAwesomeIcon
+                              icon={faFileText}
+                              className="mr-2"
+                            />
+                            Markdown
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-5 text-sm text-gray-400">
                       <span>
-                        <FontAwesomeIcon icon={faFileAlt} className="mr-2" /> Note
+                        <FontAwesomeIcon icon={faFileAlt} className="mr-2" />{" "}
+                        Note
                       </span>
                     </div>
                   </div>
@@ -625,6 +754,14 @@ const Search = () => {
           </div>
         )}
       </main>
+
+      {/* Markdown Viewer Modal */}
+      {showMarkdownViewer && currentMarkdownNote && (
+        <MarkdownViewer
+          note={currentMarkdownNote}
+          onClose={() => setShowMarkdownViewer(false)}
+        />
+      )}
     </div>
   );
 };

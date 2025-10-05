@@ -4,6 +4,7 @@ import {
   getPublicNotes,
   createNote,
   deleteNote,
+  triggerFileDownload,
 } from "../services/notesService.js";
 import { getPopularTags } from "../services/tagsService.js";
 import { toggleBookmark } from "../services/bookmarksService.js";
@@ -14,8 +15,20 @@ import FileViewer from "./FileViewer.jsx";
 import CORSDebugger from "./CORSDebugger.jsx";
 import Pagination from "./Pagination.jsx";
 import { TagList, TagInput } from "./TagComponents.jsx";
+import MarkdownViewer from "./MarkdownViewer.jsx";
+import {
+  OCRStatusBadge,
+  OCRProgressIndicator,
+  OCRFeatureHighlight,
+} from "./OCRComponents.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faTimes, faHeart, faEye, faDownload } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faTimes,
+  faHeart,
+  faEye,
+  faDownload,
+} from "@fortawesome/free-solid-svg-icons";
 
 const Dashboard = () => {
   // Notes and pagination state
@@ -26,7 +39,7 @@ const Dashboard = () => {
   const [totalNotes, setTotalNotes] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrev, setHasPrev] = useState(false);
-  
+
   // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,11 +59,15 @@ const Dashboard = () => {
   const [popularTags, setPopularTags] = useState([]);
   const [recommendedNotes, setRecommendedNotes] = useState([]);
   const [bookmarkedNotes, setBookmarkedNotes] = useState(new Set());
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'recommended'
+  const [activeTab, setActiveTab] = useState("all"); // 'all', 'recommended'
 
   // File viewer state
   const [showFileViewer, setShowFileViewer] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
+
+  // Markdown viewer state
+  const [showMarkdownViewer, setShowMarkdownViewer] = useState(false);
+  const [currentMarkdownNote, setCurrentMarkdownNote] = useState(null);
 
   // Debug state
   const [showDebugger, setShowDebugger] = useState(false);
@@ -70,13 +87,13 @@ const Dashboard = () => {
     try {
       setLoading(true);
       let notesData;
-      
-      if (activeTab === 'recommended' && user) {
+
+      if (activeTab === "recommended" && user) {
         notesData = await getRecommendedNotes(currentPage, perPage);
       } else {
         notesData = await getPublicNotes(currentPage, perPage);
       }
-      
+
       // Handle both old format (array) and new format (pagination object)
       if (Array.isArray(notesData)) {
         setNotes(notesData);
@@ -213,6 +230,32 @@ const Dashboard = () => {
     setShowFileViewer(true);
   };
 
+  // File download handler
+  const handleFileDownload = async (noteId, filename) => {
+    try {
+      await triggerFileDownload(noteId, filename);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Download failed. Please try again.");
+    }
+  };
+
+  // Markdown download handler
+  const handleMarkdownDownload = async (noteId, filename) => {
+    try {
+      await triggerFileDownload(noteId, filename, true); // true for markdown
+    } catch (error) {
+      console.error("Markdown download failed:", error);
+      alert("Markdown download failed. Please try again.");
+    }
+  };
+
+  // Open markdown viewer
+  const handleViewMarkdown = (note) => {
+    setCurrentMarkdownNote(note);
+    setShowMarkdownViewer(true);
+  };
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   if (loading) {
@@ -273,7 +316,10 @@ const Dashboard = () => {
                 />
               </svg>
             </div>
-            <Link to="/" className="text-xl font-poppins font-bold text-blue-900">
+            <Link
+              to="/"
+              className="text-xl font-poppins font-bold text-blue-900"
+            >
               NoteLens
             </Link>
           </div>
@@ -420,8 +466,10 @@ const Dashboard = () => {
         {/* Popular Tags */}
         {popularTags.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Popular Tags</h2>
-            <TagList 
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              Popular Tags
+            </h2>
+            <TagList
               tags={popularTags}
               onTagClick={(tag) => navigate(`/search?tags=${tag.name}`)}
             />
@@ -432,22 +480,22 @@ const Dashboard = () => {
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => handleTabChange('all')}
+              onClick={() => handleTabChange("all")}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "all"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               All Notes ({totalNotes})
             </button>
             {user && (
               <button
-                onClick={() => handleTabChange('recommended')}
+                onClick={() => handleTabChange("recommended")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'recommended'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  activeTab === "recommended"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Recommended
@@ -520,6 +568,11 @@ const Dashboard = () => {
                     </span>
                   </div>
 
+                  {/* OCR Status Display */}
+                  <div className="mt-3">
+                    <OCRStatusBadge noteId={note.public_id} />
+                  </div>
+
                   <div className="mt-4 flex justify-between items-center">
                     <Link
                       to={`/note/${note.public_id}`}
@@ -529,14 +582,60 @@ const Dashboard = () => {
                       <i className="fas fa-arrow-right ml-1"></i>
                     </Link>
 
-                    <button
-                      onClick={() => handleViewFile(note)}
-                      className="inline-flex items-center text-green-600 hover:text-green-700 transition-colors font-poppins font-semibold"
-                      aria-label="View file"
-                    >
-                      <i className="fas fa-eye mr-1"></i>
-                      View File
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewFile(note)}
+                        className="inline-flex items-center text-green-600 hover:text-green-700 transition-colors font-poppins font-semibold"
+                        aria-label="View file"
+                      >
+                        <i className="fas fa-eye mr-1"></i>
+                        View File
+                      </button>
+
+                      {/* Markdown View Button */}
+                      <button
+                        onClick={() => handleViewMarkdown(note)}
+                        className="inline-flex items-center text-purple-600 hover:text-purple-700 transition-colors font-poppins font-semibold"
+                        title="View AI-generated markdown"
+                      >
+                        <i className="fas fa-file-markdown mr-1"></i>
+                        Markdown
+                      </button>
+
+                      {/* Download Options */}
+                      <div className="relative group">
+                        <button className="inline-flex items-center text-gray-600 hover:text-gray-700 transition-colors font-poppins font-semibold">
+                          <i className="fas fa-download mr-1"></i>
+                          Download
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block z-10">
+                          <button
+                            onClick={() =>
+                              handleFileDownload(
+                                note.public_id,
+                                `${note.title}.pdf`
+                              )
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <i className="fas fa-file-pdf mr-2"></i>
+                            Original File
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMarkdownDownload(
+                                note.public_id,
+                                `${note.title}.md`
+                              )
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <i className="fas fa-file-markdown mr-2"></i>
+                            Markdown
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -631,6 +730,9 @@ const Dashboard = () => {
                   )}
                 </div>
 
+                {/* OCR Feature Highlight */}
+                <OCRFeatureHighlight />
+
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -680,7 +782,9 @@ const Dashboard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-auto shadow-lg">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-poppins font-semibold">API Debugger</h2>
+              <h2 className="text-xl font-poppins font-semibold">
+                API Debugger
+              </h2>
               <button
                 onClick={() => setShowDebugger(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -694,6 +798,14 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Markdown Viewer Modal */}
+      {showMarkdownViewer && currentMarkdownNote && (
+        <MarkdownViewer
+          note={currentMarkdownNote}
+          onClose={() => setShowMarkdownViewer(false)}
+        />
       )}
     </div>
   );
