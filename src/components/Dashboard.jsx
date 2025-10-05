@@ -156,6 +156,12 @@ const Dashboard = () => {
                 Welcome, {user?.username || "User"}!
               </span>
               <Link
+                to="/profile"
+                className="text-blue-600 hover:text-blue-700 px-4 py-2 rounded-lg transition-colors"
+              >
+                Profile
+              </Link>
+              <Link
                 to="/courses"
                 className="text-blue-600 hover:text-blue-700 px-4 py-2 rounded-lg transition-colors"
               >
