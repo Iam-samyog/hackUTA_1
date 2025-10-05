@@ -417,6 +417,46 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Popular Tags */}
+        {popularTags.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Popular Tags</h2>
+            <TagList 
+              tags={popularTags}
+              onTagClick={(tag) => navigate(`/search?tags=${tag.name}`)}
+            />
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => handleTabChange('all')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'all'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              All Notes ({totalNotes})
+            </button>
+            {user && (
+              <button
+                onClick={() => handleTabChange('recommended')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'recommended'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Recommended
+                {recommendedNotes.length > 0 && ` (${recommendedNotes.length})`}
+              </button>
+            )}
+          </nav>
+        </div>
+
         <div className="mb-8">
           <h1 className="text-4xl font-poppins font-bold text-gray-900 mb-2">
             Public Notes
@@ -503,6 +543,20 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+
+        {/* Pagination */}
+        {!loading && notes.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hasNext={hasNext}
+            hasPrev={hasPrev}
+            onPageChange={handlePageChange}
+            onPerPageChange={handlePerPageChange}
+            perPage={perPage}
+            total={totalNotes}
+          />
+        )}
       </main>
 
       {/* Create Note Modal */}
@@ -546,6 +600,18 @@ const Dashboard = () => {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags
+                  </label>
+                  <TagInput
+                    tags={selectedTags}
+                    onTagsChange={setSelectedTags}
+                    suggestions={popularTags}
+                    placeholder="Add tags to help others find your note..."
                   />
                 </div>
 
